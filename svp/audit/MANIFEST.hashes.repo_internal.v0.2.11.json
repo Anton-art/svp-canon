@@ -3,7 +3,7 @@
   "algo": "sha256",
   "generated_utc": "2026-02-14T00:00:00Z",
   "files": {
-    "README.md": "3a9d55f07e05d1b0b037826367b4548e19e6946803cb71595ec871f7986da14e",
+    "README.md": "c08ecede4a9f8681a93df811555296e57c9fbbccefd25e752c808219dc87824e",
     "svp/appendices/Appendix_A4_STEP4_YAML_Templates_v1.1.4.yaml": "ed3c2f278b8f97e5f65b76e2996edf56d430d4dcecaa2e6bc23c86dcd4f5ddab",
     "svp/appendices/Appendix_A_STEP5_YAML_Templates_v1.2.2_fixed.yaml": "742636dabd32a25754bc75ef9cbf3fe31d6bdeb91b92ec92dd56d5f03eb30eb4",
     "svp/appendices/Appendix_B_EvidenceGap_Codes_v0.1.1.md": "fdd2ee727049e20551bb166464cc0e12b23c8876b8d6d6eab27e3569ce5b8d42",
