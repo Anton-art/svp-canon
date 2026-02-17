@@ -1,0 +1,752 @@
+# SVP-EVAL Policy Pack v0.1.2 (Unified YAML) — updated_fixed_step6
+
+- YAML file: `SVP-EVAL_PolicyPack_v0.1.2_updated_fixed_step6.yaml`
+- SHA256 (YAML): `0114be34a556d333328445ac792257ece89c84def008733f9aaf12c6bd7f0349`
+
+```yaml
+svp_eval_policy_pack_v0_1:
+  policy_id: SVP-EVAL-POLICY-v0.1
+  policy_hash_algo: sha256
+  created_utc: '2026-02-13T00:00:00Z'
+  owner: SVP
+  versions:
+    normalizer_version: norm_v1
+    tokenizer_version: tok_v1
+    claim_splitter_version: split_v0_1
+    similarity_impl_version: cos_v1
+    retrieval_impl_version: retr_v1
+    ir_builder_version: ir_v1
+    minhash_impl_version: minhash_v1
+    lsh_impl_version: lsh_v1
+    simhash_impl_version: simhash64_v1
+    drift_metric_id: js_v1
+    drift_metric_impl_version: drift_v1
+    bootstrap_impl_version: boot_v1
+    jackknife_impl_version: jack_v1
+    provenance_cluster_impl_version: provclust_v1
+    modules:
+      ess_version: 0.1.2
+      rtt_version: 0.1.2
+  artifacts:
+    module_a_ess:
+      ref: Module_A_ESS_v0.1.2_fixed.md
+      sha256: ee842892f6440600f88a83e6d8343c09c6806b449d37036ad6ba999920778594
+    module_b_rtt:
+      ref: Module_B_RTT_v0.1.2_fixed.md
+      sha256: b7591c97133bd8df977ded4caf178a8d01ce5c1084cdc4abab2dc3b40a18bc5d
+    update_log:
+    - date_utc: '2026-02-13'
+      change: Added step6 thresholds (theta_sign, confidence_thresholds) and required_keys.step6_required.
+    appendix_d_side_outputs_contract:
+      ref: Appendix_D_SideOutputs_Banks_Contract_v0.1.md
+      sha256: 0ec41364652ac1e82e72c225ce73b2b27f591cbfbcaa1053c73d32692ad313e9
+    appendix_d_side_record_template:
+      ref: Appendix_D_SideRecord_Template_v0.1.yaml
+      sha256: 541b0102ff6d9c29ef7c19afcbfd1c48f355a00946d3e506a0fe927b149c7f50
+    appendix_e_agent_feedback_loop_contract:
+      ref: Appendix_E_Agent_Feedback_Loop_Contract_v0.1.md
+      sha256: c91995c629fbfdfd0102051d8c1094b0d3bc70a3ef0a8c48fb5366703d8cc506
+    appendix_e_agent_feedback_envelope_template:
+      ref: Appendix_E_AgentFeedbackEnvelope_Template_v0.1.yaml
+      sha256: 4c9c5cb59ea3f5302d9d58280b132281415f6f4838aa2805c5937c36d361fe0e
+  language:
+    language_mode: auto
+    supported_languages:
+    - ru
+    - he
+    - en
+    vowel_sets:
+      ru:
+      - а
+      - е
+      - ё
+      - и
+      - о
+      - у
+      - ы
+      - э
+      - ю
+      - я
+      en:
+      - a
+      - e
+      - i
+      - o
+      - u
+      - y
+      he: []
+  step1:
+    limits:
+      s1_min_chars: 3
+      s1_min_tokens: 2
+      s1_max_chars: 20000
+      s1_max_tokens: 4000
+    noise_thresholds:
+      s1_block_p_sym: 0.35
+      s1_block_p_sus: 0.25
+      s1_block_len_max: 80
+      s1_block_url_count: 5
+      s1_block_repeat_punct: true
+      repeat_punct_run: 4
+    claim_splitter_rules:
+      split_on_sentence_punct: true
+      split_on_list_items: true
+      preserve_quotes_as_claims: true
+      drop_empty_after_trim: true
+  step2:
+    routing:
+      tau_stageA_drop: 55
+      tau_noise_drop: 80
+    weights:
+      a_var: 0.35
+      a_conf: 0.35
+      a_logic: 0.2
+      a_noise: 0.1
+    noise:
+      url_max: 1
+      weights:
+        w_sym: 1.0
+        w_sus: 1.0
+        w_len: 1.0
+        w_url: 15.0
+        w_punct: 10.0
+      f_sym:
+        type: piecewise_linear
+        points:
+        - - 0.0
+          - 0
+        - - 0.1
+          - 10
+        - - 0.2
+          - 30
+        - - 0.35
+          - 70
+        - - 0.5
+          - 100
+      f_sus:
+        type: piecewise_linear
+        points:
+        - - 0.0
+          - 0
+        - - 0.05
+          - 15
+        - - 0.1
+          - 35
+        - - 0.25
+          - 80
+        - - 0.4
+          - 100
+      f_len:
+        type: piecewise_linear
+        points:
+        - - 0
+          - 0
+        - - 20
+          - 10
+        - - 40
+          - 30
+        - - 80
+          - 80
+        - - 120
+          - 100
+    heuristics:
+      has_contra:
+        type: marker_based
+        rule: (mA>0 AND mV>0) OR contradiction_pair_hit
+      has_nested_conditions:
+        tokens_any:
+        - если
+        - при условии
+        min_if_count: 2
+      dangling_deictics:
+        deictic_tokens:
+        - это
+        - то
+        - такое
+        - вот
+        - там
+        - здесь
+        content_token_min_len: 4
+        ignore_tokens:
+        - <num>
+        - <url>
+    rounding:
+      rounding_mode: round_half_up
+  marker_packs:
+    active_marker_pack_version: MARKERS_RU_v1
+    packs:
+      MARKERS_RU_v1:
+        language: ru
+        M_V:
+        - возможно
+        - кажется
+        - вероятно
+        - может
+        - предположим
+        - гипотеза
+        - подозреваю
+        M_A:
+        - всегда
+        - никогда
+        - абсолютно
+        - точно
+        - безусловно
+        - гарантированно
+        - невозможно
+        M_L:
+        - если
+        - то
+        - иначе
+        - следовательно
+        - поскольку
+        - значит
+        - при условии
+        - тогда
+        contradiction_pairs:
+        - - всегда
+          - никогда
+        - - возможно
+          - точно
+        noise_token_patterns:
+        - (?i)free\s+money
+        - (?i)click\s+here
+        - (?i)viagra
+        - (?i)http(s)?://
+    suspicious_rules:
+      sus_len_min: 18
+      script_transition_threshold: 2
+      run_chars:
+      - _
+      - '-'
+      - '*'
+      run_len_min: 3
+  step3:
+    routing_thresholds:
+      tau_liquid: 25
+      tau_human: 45
+      tau_border: 50
+    weights:
+      w_conflict: 0.5
+      w_variance: 0.3
+      w_surface_distance: 0.2
+    variance:
+      N_variants: 5
+      ir_builder_version: ir_v1
+      variant_ruleset_hash: sha256:SET_AT_RELEASE
+      variant_max_len: 320
+      feature_vector_schema: ir_feat_v1
+      drift_metric_id: js_v1
+      D_variance_agg: median
+    conflict:
+      conflict_quarantine_threshold: 95
+    rewrite:
+      variance_rewrite_threshold: 90
+    logic:
+      include_logic_in_chi: false
+  step4:
+    retrieval:
+      K_default: 25
+    scoring:
+      alpha: 1.0
+      use_semantic: false
+    thresholds:
+      tau_known: 0.92
+      tau_near: 0.8
+      tau_orphan: 0.4
+    near_dup:
+      enabled: true
+      shingle_k: 7
+      minhash_k: 128
+      simhash_bits: 64
+      tau_dup_jaccard_est: 0.88
+      tau_dup_simhash_hamming: 6
+      lsh_bands: 32
+      lsh_rows: 4
+  ess:
+    base_strength_table:
+      E_text: 15
+      E_ref: 25
+      E_case: 35
+      E_sim: 45
+      E_obs: 55
+      E_bio: 60
+    confidence_thresholds:
+      weak_max: 49
+      med_min: 50
+      med_max: 74
+      high_min: 75
+    horizon_T_ref_days:
+      short: 7
+      medium: 30
+      long: 180
+    rounding_mode: round_half_up
+    T_neutral_if_missing: 0.5
+  rtt:
+    theta_table:
+      short:
+        LOW: 0.1
+        MED: 0.15
+        HIGH: 0.2
+      medium:
+        LOW: 0.12
+        MED: 0.18
+        HIGH: 0.25
+      long:
+        LOW: 0.15
+        MED: 0.22
+        HIGH: 0.3
+    sim_thresholds:
+      eps: 0.001
+      min_stress_pass:
+        short:
+          LOW: 0.9
+          MED: 0.95
+          HIGH: 0.98
+        medium:
+          LOW: 0.92
+          MED: 0.97
+          HIGH: 0.99
+        long:
+          LOW: 0.95
+          MED: 0.98
+          HIGH: 0.995
+      min_cycles:
+        short:
+          LOW: 50
+          MED: 200
+          HIGH: 500
+        medium:
+          LOW: 100
+          MED: 300
+          HIGH: 800
+        long:
+          LOW: 200
+          MED: 500
+          HIGH: 1200
+      cycles_ref:
+        short:
+          LOW: 100
+          MED: 300
+          HIGH: 800
+        medium:
+          LOW: 200
+          MED: 600
+          HIGH: 1500
+        long:
+          LOW: 400
+          MED: 900
+          HIGH: 2500
+    resampling:
+      enabled: false
+      bootstrap_runs_min: 200
+      ci_level: 0.95
+      sign_stability_tau: 0.9
+      influence_tau: 0.2
+      influence_topk: 5
+    cluster_key_fields:
+    - dataset_id
+    - lab_id
+    - parent_source_id
+    cluster_penalty_alpha: 1.0
+    w_indep_formula: 1/(cluster_size^alpha)
+  primitives:
+    clip:
+      clip01: min(1, max(0, x))
+      clip0100: min(100, max(0, x))
+    rounding:
+      default_mode: round_half_up
+      modes_supported:
+      - round_half_up
+      - floor
+      - ceil
+      - bankers
+    hashing:
+      raw_input_sha256: sha256(raw_text bytes, UTF-8)
+      normalized_text_sha256: sha256(normalized_text bytes, UTF-8)
+      claim_sha256: sha256(claim_text bytes, UTF-8)
+    tokenization:
+      token_length_unit: unicode_codepoints
+      token_denominator_mode:
+        p_sym_total: exclude_whitespace
+    suspicious_token_ruleset:
+      rules:
+        R1_script_transitions:
+          enabled: true
+          scripts:
+          - Latin
+          - Cyrillic
+          - Digits
+          threshold: 2
+        R2_run_chars:
+          enabled: true
+          run_chars:
+          - _
+          - '-'
+          - '*'
+          run_len_min: 3
+        R3_no_vowels:
+          enabled: true
+          sus_len_min: 18
+          vowel_sets_ref: language.vowel_sets
+        R4_pattern_match:
+          enabled: true
+          patterns_ref: marker_packs.packs.<active>.noise_token_patterns
+    repeat_punct:
+      punct_run_min_default: 4
+      punct_chars_default:
+      - '!'
+      - '?'
+      - .
+      - ','
+      - …
+      - —
+      - '-'
+      - ':'
+      - ;
+  required_keys:
+    global_versions:
+    - versions.normalizer_version
+    - versions.tokenizer_version
+    - versions.claim_splitter_version
+    - versions.ir_builder_version
+    - versions.similarity_impl_version
+    - versions.retrieval_impl_version
+    - versions.minhash_impl_version
+    - versions.lsh_impl_version
+    - versions.simhash_impl_version
+    - versions.drift_metric_id
+    - versions.drift_metric_impl_version
+    - versions.bootstrap_impl_version
+    - versions.jackknife_impl_version
+    - versions.provenance_cluster_impl_version
+    - versions.modules.ess_version
+    - versions.modules.rtt_version
+    step1_required:
+    - step1.limits
+    - step1.noise_thresholds
+    step2_required:
+    - step2.routing.tau_stageA_drop
+    - step2.routing.tau_noise_drop
+    - step2.weights
+    - step2.noise
+    - marker_packs.active_marker_pack_version
+    - marker_packs.packs
+    step3_required:
+    - step3.routing_thresholds
+    - step3.weights
+    - step3.variance.N_variants
+    - step3.variance.ir_builder_version
+    - step3.variance.variant_ruleset_hash
+    - step3.variance.feature_vector_schema
+    - step3.variance.drift_metric_id
+    - step3.variance.D_variance_agg
+    step4_required:
+    - step4.retrieval.K_default
+    - step4.scoring.alpha
+    - step4.thresholds
+    - step4.scoring.use_semantic
+    - step4.thresholds.tau_known
+    - step4.thresholds.tau_near
+    - step4.thresholds.tau_orphan
+    - step4.near_dup.enabled
+    - step4.near_dup.shingle_k
+    - step4.near_dup.minhash_k
+    - step4.near_dup.simhash_bits
+    - step4.near_dup.tau_dup_jaccard_est
+    - step4.near_dup.tau_dup_simhash_hamming
+    - step4.near_dup.lsh_bands
+    - step4.near_dup.lsh_rows
+    ess_required:
+    - ess.base_strength_table
+    - ess.confidence_thresholds
+    - ess.horizon_T_ref_days
+    - ess.rounding_mode
+    rtt_required:
+    - rtt.theta_table
+    - rtt.sim_thresholds.eps
+    - rtt.sim_thresholds.min_stress_pass
+    - rtt.sim_thresholds.min_cycles
+    - rtt.sim_thresholds.cycles_ref
+    - rtt.resampling.ci_level
+    - rtt.resampling.sign_stability_tau
+    - rtt.resampling.influence_tau
+    - rtt.resampling.enabled
+    - rtt.resampling.bootstrap_runs_min
+    - rtt.resampling.influence_topk
+    step6_required:
+    - step6.theta_sign.LOW
+    - step6.theta_sign.MED
+    - step6.theta_sign.HIGH
+    - step6.confidence_thresholds.weak_lt
+    - step6.confidence_thresholds.med_lt
+  codes:
+    blocked:
+    - BLOCKED_POLICY_MISSING
+    - BLOCKED_MARKER_PACK_MISSING
+    - BLOCKED_INDEX_UNBOUND
+    - BLOCKED_SCHEMA_MISMATCH
+    step1_routing:
+    - PASS_TO_STEP2
+    - DROP_TOO_SHORT
+    - DROP_NOISE
+    - DROP_SUSPICIOUS
+    - DROP_SPAM_URL
+    - DEFER_TOO_LONG
+    - DEFER_FORMAT_RISK
+    - BLOCKED_POLICY_MISSING
+    step2_routing:
+    - FORWARD_TO_STEP3
+    - DROP_DEFER
+    - BLOCKED_POLICY_MISSING
+    - BLOCKED_MARKER_PACK_MISSING
+    step3_routing:
+    - LIQUID_ROUTE
+    - HUMAN_ROUTE
+    - BORDERLINE_ROUTE
+    - DROP_DEFER
+    - QUARANTINE_CONFLICT
+    - REWRITE_REQUIRED
+    - BLOCKED_POLICY_MISSING
+    - BLOCKED_INDEX_UNBOUND
+    step4_classes:
+    - KNOWN
+    - NEAR_DUP
+    - NOVEL_CONNECTED
+    - NOVEL_ORPHAN
+    - BLOCKED_POLICY_MISSING
+    - BLOCKED_INDEX_UNBOUND
+    robustness_verdict:
+    - STABLE
+    - UNSTABLE
+    - INSUFFICIENT
+  stress_suite_template:
+    suite_id: STRESS_SUITE_DEFAULT_v0_1
+    suite_version: '0.1'
+    description: Startup default stress suite template. Implementations may expand,
+      but must log suite_id/version.
+    cases:
+    - case_id: SS_BASELINE
+      type: baseline
+      description: Nominal conditions
+      params: {}
+    - case_id: SS_STRESS_LOW
+      type: stress
+      description: Mild stress; small perturbations
+      params:
+        intensity: 0.25
+    - case_id: SS_STRESS_HIGH
+      type: stress
+      description: High stress; adversarial perturbations
+      params:
+        intensity: 0.75
+  presets:
+    horizon_presets:
+      short:
+        days: 7
+        label: short
+      medium:
+        days: 30
+        label: medium
+      long:
+        days: 180
+        label: long
+    risk_presets:
+      LOW:
+        label: LOW
+        notes: Low stakes; simulation optional unless flow-affecting.
+      MED:
+        label: MED
+        notes: Moderate stakes; simulation recommended for flow-affecting.
+      HIGH:
+        label: HIGH
+        notes: High stakes; simulation required for flow-affecting; stricter thresholds.
+  source_overrides:
+    enabled: false
+    rules:
+      human:
+        step1:
+          s1_block_p_sus_multiplier: 1.0
+      web:
+        step1:
+          s1_block_p_sus_multiplier: 0.8
+      agent:
+        step1:
+          s1_block_p_sus_multiplier: 0.9
+  override_mechanism:
+    allow_overrides: true
+    override_object_schema: SVP_POLICY_OVERRIDE_v0_1
+    precedence:
+    - runtime_override
+    - policy_pack
+    - implementation_default
+    rules:
+    - rule_id: OVR_NO_GUESSING
+      description: If a required key is missing after overrides, MUST BLOCK.
+      action: BLOCKED_POLICY_MISSING
+    - rule_id: OVR_VERSION_LOCK
+      description: Override MUST NOT change versions.* unless policy_id changes.
+      action: BLOCKED_SCHEMA_MISMATCH
+  traceability:
+    required_on_every_record:
+    - policy_binding.policy_config_ref
+    - policy_binding.policy_config_hash
+    - versions.normalizer_version
+    - versions.tokenizer_version
+    - versions.claim_splitter_version
+    - versions.ir_builder_version
+    - versions.similarity_impl_version
+    - versions.retrieval_impl_version
+    - versions.minhash_impl_version
+    - versions.lsh_impl_version
+    - versions.simhash_impl_version
+    - versions.drift_metric_id
+    - versions.drift_metric_impl_version
+    - versions.bootstrap_impl_version
+    - versions.jackknife_impl_version
+    - versions.provenance_cluster_impl_version
+    - versions.modules.ess_version
+    - versions.modules.rtt_version
+    required_on_step_records:
+      step1:
+      - s1r_id
+      - message_id
+      - raw_input_sha256
+      - normalized_text_sha256
+      - claims[].claim_sha256
+      - thresholds_used
+      - routing_decision
+      step2:
+      - a2r_id
+      - claim_id
+      - raw_input_sha256
+      - normalized_claim_text
+      - counts
+      - noise_inputs
+      - components
+      - weights_used
+      - Chi_A
+      - routing_decision
+      step3:
+      - cr3_id
+      - claim_id
+      - raw_input_sha256
+      - normalized_claim_text
+      - stage_a
+      - stage_b.components
+      - stage_b.weights_used
+      - Chi
+      - routing_decision
+      step4:
+      - kgr_id
+      - co_id
+      - classification.class
+      - scores.thresholds
+      - best_match
+      - index_snapshot_binding
+    hash_binding:
+      algo: sha256
+      include_policy_hash: true
+      include_snapshot_hashes: true
+  simulation_rails:
+    enabled: true
+    force_simulation_if:
+    - rule_id: SIM_RAIL_FLOW_AFFECTING_HIGH
+      if:
+        claim_flow_affecting: true
+        risk_class: HIGH
+      then:
+        require_E_sim: true
+    - rule_id: SIM_RAIL_ORPHAN_NOVELTY
+      if:
+        step4_class_in:
+        - NOVEL_ORPHAN
+        risk_class_in:
+        - MED
+        - HIGH
+      then:
+        require_U_consensus: true
+    loopback_conditions:
+    - rule_id: LOOPBACK_UNSTABLE
+      if:
+        robustness_verdict: UNSTABLE
+      then:
+        route_back_to_step5: true
+        note: Insufficient robustness; rebuild evidence / expand stress suite.
+    - rule_id: LOOPBACK_INSUFFICIENT
+      if:
+        robustness_verdict: INSUFFICIENT
+      then:
+        route_back_to_step5: true
+        note: Missing required simulation evidence.
+  orphan_consensus:
+    enabled: true
+    protocol_ref: PROTOCOL_U_v1_0
+    quorum:
+      min_humans: 2
+      min_agents: 1
+    required_fields:
+    - co_id
+    - risk_class
+    - suspected_domain.tags
+    - routing.reason
+  step6:
+    theta_sign:
+      LOW: 0.2
+      MED: 0.3
+      HIGH: 0.4
+    confidence_thresholds:
+      weak_lt: 0.25
+      med_lt: 0.6
+    notes:
+    - These thresholds are required by STEP 6 v1.2.3 (SVP-EVAL).
+    - If you want different calibration, change them here and keep Step 6 policy-bound.
+  side_outputs:
+    enabled: true
+    required_steps:
+    - STEP2
+    - STEP3
+    - STEP4
+    - STEP5
+    - STEP6
+    contract:
+      ref: Appendix_D_SideOutputs_Banks_Contract_v0.1.md
+      sha256: 0ec41364652ac1e82e72c225ce73b2b27f591cbfbcaa1053c73d32692ad313e9
+    side_record_template:
+      ref: Appendix_D_SideRecord_Template_v0.1.yaml
+      sha256: 541b0102ff6d9c29ef7c19afcbfd1c48f355a00946d3e506a0fe927b149c7f50
+    fail_closed_on_missing_side_records: true
+    banks:
+      hypothesis_bank: true
+      gap_bank: true
+      error_bank_view: true
+  update_log:
+  - date_utc: '2026-02-14'
+    change: Adds Appendix D side_outputs contract references and requires SideRecord
+      emission for STEP2–STEP6 (fail-closed if missing).
+  - date_utc: '2026-02-14'
+    change: Adds Appendix E Agent Feedback Loop contract + envelope template references;
+      enables agent_feedback_loop section.
+  updated_utc: '2026-02-14T00:00:00Z'
+  agent_feedback_loop:
+    enabled: true
+    contract:
+      ref: Appendix_E_Agent_Feedback_Loop_Contract_v0.1.md
+      sha256: c91995c629fbfdfd0102051d8c1094b0d3bc70a3ef0a8c48fb5366703d8cc506
+    envelope_template:
+      ref: Appendix_E_AgentFeedbackEnvelope_Template_v0.1.yaml
+      sha256: 4c9c5cb59ea3f5302d9d58280b132281415f6f4838aa2805c5937c36d361fe0e
+    required_side_record_fields:
+    - side_record_id
+    - run_id
+    - step_id
+    - timestamp_utc
+    - input_ref
+    - normalized_claim
+    - status
+    - scores
+    - distance_to_pass
+    - reason_codes
+    - recommended_protocol
+    - reopen_triggers
+    override_event_required: true
+```

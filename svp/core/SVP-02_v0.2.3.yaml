@@ -1,0 +1,393 @@
+svp_spec:
+  name: "Syntropy Verdict Protocol"
+  version: "0.2.3"
+  status: "normative-engine-spec"
+  compatibility: "0.2.x"
+  patch_focus:
+    - "coupling-aware evidence gating (flow_affecting -> E_sim MUST)"
+    - "SystemDelta aggregation before ΔE"
+    - "Evidence Gap Loop (UNKNOWN -> EvidenceGapPlan -> STEP 5 v1.2.2 -> re-eval)"
+    - "fail-closed normalization: INSUFFICIENT replaces legacy inconclusive status"
+invariants:
+  - id: "INV-1"
+    text: "No TRUE/FALSE without compute-readiness; otherwise UNKNOWN_SYN"
+    level: "MUST"
+  - id: "INV-2"
+    text: "No-Guessing: if element evidence profile not met => ΔE(element)=0"
+    level: "MUST"
+  - id: "INV-3"
+    text: "Simulation is evidence-only; E_sim is never truth canon"
+    level: "MUST"
+  - id: "INV-4"
+    text: "Axis-5 is downgrade-only: may narrow scope or downgrade TRUE->UNKNOWN; never upgrade"
+    level: "MUST"
+  - id: "INV-5"
+    text: "Human/Agent role is witness of artifacts/scope, not judge of truth"
+    level: "MUST"
+core_enums:
+  elements: ["HUM", "AI", "BIO", "TEC", "SOC"]
+  syntropy_verdict: ["TRUE_SYN", "FALSE_SYN", "UNKNOWN_SYN"]
+  syntropy_zone: ["TRUTH_ZONE", "LIE_ZONE", "HYPOTHESIS_ZONE"]
+  risk_class: ["LOW", "MED", "HIGH"]
+  domain:
+    allowed: ["D0", "D1", "D2", "D3", "D4_*", "D5", "UNKNOWN"]
+  horizon_class: ["short", "medium", "long"]
+  evidence_class: ["E_ops", "E_case", "E_rep", "E_fail", "E_sim", "E_cons", "E_bio"]
+  confidence: ["weak", "med", "high"]
+  sign: ["+", "0", "-"]
+mappings:
+  domain_to_horizon:
+    D0: "short"
+    D1: "short"
+    D2: "medium"
+    D3: "medium"
+    D4_*: "long"
+    D5: "long"
+  verdict_to_zone:
+    TRUE_SYN: "TRUTH_ZONE"
+    FALSE_SYN: "LIE_ZONE"
+    UNKNOWN_SYN: "HYPOTHESIS_ZONE"
+objects:
+  CO:
+    description: "Claim Object input to SVP-EVAL"
+    must_fields:
+      - co_id
+      - claim_text_norm
+      - domain
+      - scope.boundaries
+      - quality.noise_flag
+      - impact_evidence_refs
+      - witness_refs
+      - risk_class
+      - flow_affecting
+    conditional_must_fields:
+      - when: "flow_affecting==true"
+        require: ["graph_version"]
+    field_notes:
+      impact_evidence_refs: "List of evidence_ids"
+      scope.boundaries: "Non-empty object; must allow scope-fit checking"
+      witness_refs: "Witness records (artifact/scope acknowledgements); no truth-judgement fields"
+  Evidence_Common:
+    description: "Common header for all evidence classes"
+    must_fields:
+      - evidence_id
+      - class
+      - evidence_version
+      - created_utc
+      - scope_fit.in_scope
+      - time_window.observed_from_utc
+      - time_window.observed_to_utc
+      - independence.method_independent
+      - independence.data_independent
+      - independence.code_independent
+      - quality.credibility
+      - quality.reproducibility
+      - quality.limitations
+    rules:
+      - id: "EV-SCOPE-1"
+        text: "If scope_fit.in_scope==false then evidence MUST NOT contribute to marks/robustness"
+        level: "MUST"
+  Evidence_E_sim:
+    description: "Coupling simulation evidence (Protocol S/SCS output)"
+    inherits: "Evidence_Common"
+    additional_must_fields:
+      - graph_version
+      - builder_vs_critic_delta
+      - stress_suite_pass_rate
+      - cycles_run
+      - spillover.cross_element_effects
+      - borrowed_benefit.is_borrowed
+      - borrowed_benefit.debt_channels
+      - robustness.verdict
+      - robustness.eps
+    e_sim_verdict_enum: ["STABLE", "UNSTABLE", "INSUFFICIENT"]
+  SystemDelta:
+    description: "Internal aggregation product computed by SVP-EVAL (not evidence, not verdict)"
+    must_fields:
+      - delta_node
+      - spillover_map
+      - borrowed_benefit
+      - robustness_summary
+    delta_node_schema:
+      per_element:
+        sign: ["+", "0", "-"]
+        magnitude: "0..1"
+        confidence: ["weak", "med", "high"]
+    robustness_summary_schema:
+      stable: "boolean"
+      stress_pass_rate: "0..1"
+      cycles: "int"
+      ab_delta: "numeric"   # alias: abs(builder_vs_critic_delta)
+      time_lag_ok: "boolean"
+      verdict: ["STABLE", "UNSTABLE", "INSUFFICIENT"]
+  SVR:
+    description: "Syntropy Verdict Record (immutable output artifact)"
+    must_fields:
+      - svr_id
+      - svp_version
+      - timestamp_utc
+      - co_id
+      - scope.domain
+      - scope.horizon_class
+      - scope.boundaries
+      - risk_class
+      - flow_affecting
+      - syntropy_verdict
+      - syntropy_zone
+      - deltaE
+      - system_delta
+      - impact_evidence_refs
+      - axis5.applied
+      - limitations
+      - witness_refs
+    conditional_must_fields:
+      - when: "flow_affecting==true"
+        require: ["graph_version"]
+      - when: "syntropy_verdict==UNKNOWN_SYN"
+        require:
+          - unknown_reasons
+          - gap_plan_ref
+    deltaE_schema:
+      HUM: ["+", "0", "-"]
+      AI: ["+", "0", "-"]
+      BIO: ["+", "0", "-"]
+      TEC: ["+", "0", "-"]
+      SOC: ["+", "0", "-"]
+  EvidenceGapPlan:
+    description: "Actionable plan emitted when verdict is UNKNOWN"
+    must_fields:
+      - gap_plan_id
+      - co_id
+      - svr_prev_id
+      - timestamp_utc
+      - unknown_reasons
+      - missing_inputs
+      - required_actions
+      - scope_clarifications
+      - stop_rule
+      - target_horizon
+      - risk_class
+      - flow_affecting
+    reason_code_enum:
+      - MISSING_DOMAIN
+      - MISSING_SCOPE
+      - NOISE_BLOCK
+      - MISSING_EVIDENCE_PROFILE
+      - MISSING_COUPLING_EVIDENCE
+      - INSUFFICIENT_ROBUSTNESS
+      - BORROWED_BENEFIT_DETECTED
+      - EVIDENCE_CONFLICT
+      - OUT_OF_SCOPE_EVIDENCE_ONLY
+      - RESOURCE_BLOCKED
+    action_type_enum:
+      - RUN_PROTOCOL_U
+      - RUN_PROTOCOL_S_SCS
+      - COLLECT_E_OPS
+      - COLLECT_E_CASE
+      - COLLECT_E_REP
+      - COLLECT_E_FAIL
+      - REQUEST_E_CONS
+      - NARROW_SCOPE
+      - SPLIT_CLAIM
+      - ABORT_EVAL
+    stop_rule_defaults:
+      max_iterations:
+        LOW: 3
+        MED: 3
+        HIGH: 2
+      max_new_evidence: 5
+  GapExecutionReport:
+    description: "Step 5 report after executing EvidenceGapPlan actions"
+    must_fields:
+      - gap_plan_id
+      - executed_actions
+      - new_evidence_refs
+      - blocked_actions
+      - timestamp_utc
+evidence:
+  allowed_classes: ["E_ops", "E_case", "E_rep", "E_fail", "E_sim", "E_cons", "E_bio"]
+  strength_order_for_aggregation:
+    - E_fail
+    - E_rep
+    - E_ops
+    - E_case
+    - E_cons
+    - E_sim
+  simulation_is_evidence_only: true
+no_guessing:
+  rule_id: "NG-1"
+  text: "If minimal evidence profile for an element is not met => ΔE(element)=0"
+  level: "MUST"
+  coupling_limitations:
+    - id: "NG-SIM-LIMIT-SOC"
+      text: "SOC MUST NOT be set to +/- by E_sim alone; requires additional non-sim evidence per SOC profile"
+      level: "MUST"
+    - id: "NG-SIM-LIMIT-BIO"
+      text: "Under strict policy, BIO MUST NOT be set to +/- by E_sim alone"
+      level: "MUST"
+  profiles_reference: "Configured externally (SVP-02 profiles table); enforced by engine"
+flow_affecting:
+  definition:
+    - "Claim modifies inter-element couplings/transfers between HUM/AI/BIO/TEC/SOC"
+    - "Claim asserts cross-element improvement: improve X => improve Y where X!=Y"
+    - "Claim is a systemic regulator (noise/coherence/efficiency) expected to propagate"
+  coupling_evidence_gate:
+    id: "CG-SIM"
+    text: "If flow_affecting==true then at least one valid in-scope E_sim MUST be present for same scope and graph_version"
+    on_fail:
+      verdict: "UNKNOWN_SYN"
+      reason_code: "MISSING_COUPLING_EVIDENCE"
+modules:
+  ESS_v0_1:
+    name: "Evidence Strength Scoring"
+    purpose: "Compute strength [0..100] and confidence from evidence fields"
+    required: true
+  RTT_v0_1:
+    name: "Robustness Threshold Table"
+    purpose: "Define vote thresholds Θ and E_sim minima by horizon+risk; define ROBUST harm/benefit rules"
+    required: true
+  module_absence_policy:
+    on_missing: "Return UNKNOWN_SYN with reason RESOURCE_BLOCKED and emit EvidenceGapPlan"
+evaluation_pipeline:
+  name: "SVP-EVAL"
+  stages:
+    - id: "S1"
+      name: "Horizon assignment"
+      must:
+        - "Compute horizon_class from domain via domain_to_horizon mapping"
+        - "If domain==UNKNOWN => fail computability gate (UNKNOWN_SYN)"
+    - id: "S2"
+      name: "Computability Gate"
+      must_conditions:
+        - "domain != UNKNOWN"
+        - "scope.boundaries exists and non-empty"
+        - "quality.noise_flag != NOISE"
+        - "impact_evidence_refs is non-empty"
+        - "If flow_affecting==true then CG-SIM satisfied"
+      on_fail:
+        verdict: "UNKNOWN_SYN"
+        emit_gap_plan: true
+    - id: "S3"
+      name: "Evidence validation"
+      must:
+        - "All evidence referenced exists and class in allowed_classes"
+        - "Evidence must-fields present"
+        - "Only scope_fit.in_scope==true contributes"
+      on_fail:
+        verdict: "UNKNOWN_SYN"
+        reason_codes:
+          - "OUT_OF_SCOPE_EVIDENCE_ONLY"
+          - "RESOURCE_BLOCKED"
+        emit_gap_plan: true
+    - id: "S4"
+      name: "Build SystemDelta"
+      must:
+        - "Use ESS+RTT to score evidence"
+        - "Aggregate per element into SystemDelta.delta_node"
+        - "Derive spillover_map and borrowed_benefit from evidence (esp E_sim)"
+        - "Compute robustness_summary using RTT minima and E_sim fields when required"
+      on_fail:
+        verdict: "UNKNOWN_SYN"
+        reason_codes: ["RESOURCE_BLOCKED"]
+        emit_gap_plan: true
+    - id: "S5"
+      name: "Derive ΔE(element) with No-Guessing"
+      must:
+        - "For each element, propose sign from SystemDelta.delta_node"
+        - "Apply element evidence profiles; if not met => ΔE=0"
+    - id: "S6"
+      name: "System constraints (robustness + borrowed benefit)"
+      must:
+        - "If flow_affecting==true, require robustness_summary.verdict==STABLE per RTT minima"
+        - "If borrowed_benefit.is_borrowed==true, TRUE_SYN is disallowed unless scope is narrowed to exclude debt regimes"
+      on_violation:
+        verdict: "UNKNOWN_SYN"
+        reason_codes:
+          - "INSUFFICIENT_ROBUSTNESS"
+          - "BORROWED_BENEFIT_DETECTED"
+        emit_gap_plan: true
+    - id: "S7"
+      name: "Verdict rules"
+      rules:
+        TRUE_SYN:
+          requires:
+            - "Exists element with ΔE=+"
+            - "No element with ΔE=-"
+            - "If flow_affecting==true: robustness stable and borrowed_benefit=false"
+        FALSE_SYN:
+          requires:
+            - "Exists element with ΔE=-"
+            - "Harm is ROBUST per RTT (horizon+risk)"
+            - "Harm not removable via scope narrowing within declared scope"
+          otherwise:
+            - verdict: "UNKNOWN_SYN"
+              reason_code: "BORROWED_BENEFIT_DETECTED"
+              emit_gap_plan: true
+        UNKNOWN_SYN:
+          default: true
+    - id: "S8"
+      name: "Axis-5 secondary check (downgrade-only)"
+      must:
+        - "If verdict TRUE_SYN, run Axis-5"
+        - "Axis-5 may narrow scope or downgrade TRUE->UNKNOWN"
+        - "Axis-5 must never upgrade UNKNOWN->TRUE"
+    - id: "S9"
+      name: "Zone mapping + emit SVR"
+      must:
+        - "Map verdict to zone via verdict_to_zone"
+        - "Emit SVR with required fields"
+        - "If UNKNOWN_SYN, include unknown_reasons and gap_plan_ref"
+evidence_gap_loop:
+  name: "Evidence Gap Loop"
+  trigger: "syntropy_verdict==UNKNOWN_SYN"
+  must:
+    - "Emit EvidenceGapPlan unless stop_rule halts immediately"
+    - "Route next actions based on reason codes"
+    - "Enforce stop_rule.max_iterations"
+  routing:
+    to_step5_research:
+      reasons:
+        - MISSING_COUPLING_EVIDENCE
+        - INSUFFICIENT_ROBUSTNESS
+        - BORROWED_BENEFIT_DETECTED
+        - EVIDENCE_CONFLICT
+      required_actions_must_include_one_of:
+        - RUN_PROTOCOL_S_SCS
+        - COLLECT_E_OPS
+        - COLLECT_E_CASE
+        - COLLECT_E_REP
+        - COLLECT_E_FAIL
+        - REQUEST_E_CONS
+        - NARROW_SCOPE
+    to_rewrite_protocol_u:
+      reasons:
+        - MISSING_SCOPE
+        - MISSING_DOMAIN
+      required_actions_must_include_one_of:
+        - RUN_PROTOCOL_U
+        - SPLIT_CLAIM
+        - NARROW_SCOPE
+    halt:
+      reasons:
+        - NOISE_BLOCK
+      default_action: ABORT_EVAL
+  step5_obligations:
+    when_invoked_with_gap_plan:
+      must:
+        - "Execute required_actions in descending priority"
+        - "Emit GapExecutionReport"
+        - "Append new evidence refs to CO.impact_evidence_refs"
+        - "If action blocked, record RESOURCE_BLOCKED with details"
+axis5:
+  policy:
+    downgrade_only: true
+    allowed_effects:
+      - "narrow_scope"
+      - "downgrade_TRUE_to_UNKNOWN"
+    forbidden_effects:
+      - "upgrade_UNKNOWN_to_TRUE"
+      - "invent_marks_without_evidence"
+implementation_notes:
+  - "SVP-EVAL MUST NOT run simulations itself; it consumes evidence artifacts produced in Step 5."
+  - "ESS/RTT are normative configuration modules; if absent, treat as RESOURCE_BLOCKED."
+  - "Profiles for No-Guessing are external tables but enforcement is mandatory at runtime."

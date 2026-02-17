@@ -1,0 +1,159 @@
+appendix_a4_step4_v1_1_4_templates:
+  knownness_gate_record_template:
+    kgr_id: KGR_0001
+    class: KnownnessGateRecord
+    step: STEP_4
+    version: 1.1.4
+    gating_time_utc: YYYY-MM-DDThh:mm:ssZ
+    raw_idea_ref: RAW_...
+    normalized_claim_text: '...'
+    normalizer_version: norm_v1
+    policy_binding:
+      policy_config_ref: POLICY_STEP4_...
+      policy_config_hash: sha256:...
+    index_snapshot_binding:
+      b_user_snapshot_id: BUSER_SNAP_...
+      b_user_snapshot_hash: sha256:...
+      b_core_snapshot_id: BCORE_SNAP_...
+      b_core_snapshot_hash: sha256:...
+      retrieval_impl_version: retr_v3
+      embedding_model_id: emb_vX
+      embedding_impl_version: emb_impl_vY
+      similarity_impl_version: cos_v1
+      shingler_version: shingle_v1
+      minhash_impl_version: minhash_v1
+      lsh_impl_version: lsh_v1
+      simhash_impl_version: simhash_v1
+    neighbor_id_type: knowledge_item_id
+    retrieval_params:
+      K: 25
+      filters: []
+      language_mode: auto
+    scores:
+      alpha: 0.5
+      thresholds:
+        tau_known: 0.92
+        tau_near: 0.82
+        tau_orphan: 0.08
+    top_neighbors_user:
+    - id: U_123
+      C_lex: 0.31
+      C_sem01: 0.88
+      C_connect: 0.6
+    top_neighbors_core:
+    - id: C_987
+      C_lex: 0.1
+      C_sem01: 0.95
+      C_connect: 0.53
+    best_match:
+      best_match_id: U_123
+      best_match_base: B_user
+      best_match_scores:
+        C_lex: 0.31
+        C_sem01: 0.88
+        C_connect: 0.6
+      tie_break_applied: false
+    classification:
+      m: 0.6
+      class: NOVEL_CONNECTED
+      risk_class: MED
+    co_id:
+      value: CO_...
+      status: provisional
+      derivation_rule: hash(normalized_claim_text + policy_config_ref) truncated
+      scope_ref: null
+      terms_ref: null
+    notes: []
+    near_dup_policy:
+      enabled: true
+      shingle_k: 7
+      minhash_k: 128
+      simhash_bits: 64
+      tau_dup_jaccard_est: 0.88
+      tau_dup_simhash_hamming: 6
+      lsh_bands: 32
+      lsh_rows: 4
+    fingerprints_claim:
+      minhash_sig: hex:...
+      simhash_u64: 0x...
+    lsh_audit:
+      buckets_hit_user: []
+      buckets_hit_core: []
+      cands_lsh_user_count: 0
+      cands_lsh_core_count: 0
+    candidate_set_summary:
+      cand_size: 0
+      topk_user_count: 0
+      topk_core_count: 0
+      lsh_user_count: 0
+      lsh_core_count: 0
+    best_match_dup:
+      J_est: null
+      H: null
+      dup_signal: false
+    policy_key_paths:
+      use_semantic: policy.step4.scoring.use_semantic
+      alpha: policy.step4.scoring.alpha
+      normalizer_version: policy.versions.normalizer_version
+      K_default: policy.step4.retrieval.K_default
+      tau_known: policy.step4.thresholds.tau_known
+      tau_near: policy.step4.thresholds.tau_near
+      tau_orphan: policy.step4.thresholds.tau_orphan
+      near_dup: policy.step4.near_dup.*
+      orphan_consensus: policy.orphan_consensus.*
+    scoring_policy:
+      use_semantic: true
+      alpha: 0.55
+    policy_config_ref: SVP-EVAL_PolicyPack_v0.1
+    policy_config_hash: null
+  diff_stub_template:
+    diff_id: DIFF_0001
+    class: DiffStub
+    step: STEP_4
+    version: 1.1.4
+    co_id: CO_...
+    neighbor_id_type: knowledge_item_id
+    anchor_id: U_123
+    diff_type: CONSTRAINT_CHANGE
+    detected_differences:
+      scope: unknown
+      constraints: true
+      wording: true
+    diff_notes: Near-duplicate; constraints likely tightened.
+    kgr_ref: KGR_0001
+  orphan_incident_record_template:
+    oir_id: OIR_0001
+    class: OrphanIncidentRecord
+    step: STEP_4
+    version: 1.1.4
+    co_id: CO_...
+    risk_class: HIGH
+    orphan_degree: 0.93
+    m: 0.07
+    nearest_neighbors_weak:
+    - base: B_core
+      id: C_555
+      C_connect: 0.07
+      C_lex: 0.02
+      C_sem01: 0.12
+    suspected_domain:
+      source: metadata
+      tags:
+      - domain:physics
+      - risk:high
+    routing:
+      required_action: U_REQUIRED_BEFORE_S
+      recommended_next_step: STEP_5
+      reason: 'Orphan + high-risk: require scope/terms before any simulation.'
+    refs:
+      kgr_ref: KGR_0001
+      policy_config_ref: POLICY_STEP4_...
+      index_snapshot_binding_ref: BINDING_...
+    policy_orphan_consensus:
+      enabled: true
+      protocol_ref: policy.orphan_consensus.protocol_ref
+      quorum:
+        min_humans: policy.orphan_consensus.quorum.min_humans
+        min_agents: policy.orphan_consensus.quorum.min_agents
+      required_fields: policy.orphan_consensus.required_fields
+    kgr_ref: ref:kgr_id

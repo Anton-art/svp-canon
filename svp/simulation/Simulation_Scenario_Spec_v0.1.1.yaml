@@ -1,0 +1,1524 @@
+# Simulation Scenario Spec v0.1.1 — Configuration Profile (default)
+# This file provides DEFAULT values and templates. It is normative as a baseline,
+# but may be overridden per-domain if overrides are explicitly declared in E_sim.
+
+sim_config_profile:
+  profile_id: "SCS_PROFILE_DEFAULT_v0.1.1"
+  applies_to:
+    domains: ["D0", "D1", "D2", "D3", "D4_*", "D5"]
+    horizon_classes: ["short", "medium", "long"]
+  defaults:
+    # Evidence→Signal mapping
+    alpha: 0.50        # α in S_e = α*ΔK_norm + (1-α)*ΔE_norm
+    tau: 0.05          # deadzone for mapping S_e -> mark (+/0/-)
+
+    # Normalization scales (used to map raw deltas into [-1..1])
+    # These are scale constants, not “truth”—they define the sensitivity of mark mapping.
+    K_scale: 0.10      # ΔK_norm = clip(-1..1, ΔK / K_scale)
+    E_scale: 0.10      # ΔE_norm = clip(-1..1, ΔE / E_scale)
+
+    # Builder vs Critic stability
+    eps_ab_delta: 0.001
+
+    # Windowing: evaluation window as a fraction of the scenario run
+    evaluation_window:
+      method: "tail_fraction"
+      tail_fraction: 0.60     # use last 60% of timesteps for mean_t
+      min_steps: 50
+
+  time_base:
+    # How many simulation steps correspond to horizon classes by default.
+    # Used for time-lag checks and to define evaluation windows if not specified.
+    steps_per_horizon:
+      short: 200
+      medium: 600
+      long: 2000
+
+  critical_edges:
+    # Critical edges are those that MUST be included in stress coverage when implicated.
+    # Default: all inbound edges to AI and SOC, plus all outbound edges from HUM and AI.
+    # This reflects that AI/SOC act as coherence/processing hubs, and HUM/AI are primary intervention sources.
+    selection_policy:
+      default_rule:
+        - "ALL_INBOUND_TO:AI"
+        - "ALL_INBOUND_TO:SOC"
+        - "ALL_OUTBOUND_FROM:HUM"
+        - "ALL_OUTBOUND_FROM:AI"
+      allow_override: true
+      override_requires:
+        - "explicit_justification"
+        - "witness_scope_ack (optional)"
+    explicit_list_if_graph_matches_element5_matrix:
+      # If your coupling graph uses these canonical edges, they are treated as critical by default.
+      - "HUM->AI"
+      - "BIO->AI"
+      - "TEC->AI"
+      - "SOC->AI"
+      - "AI->HUM"
+      - "BIO->HUM"
+      - "TEC->HUM"
+      - "SOC->HUM"
+      - "HUM->BIO"
+      - "AI->BIO"
+      - "TEC->BIO"
+      - "SOC->BIO"
+      - "HUM->TEC"
+      - "AI->TEC"
+      - "BIO->TEC"
+      - "SOC->TEC"
+      - "HUM->SOC"
+      - "AI->SOC"
+      - "BIO->SOC"
+      - "TEC->SOC"
+
+  stress_suite_template:
+    suite_id: "STRESS_SUITE_DEFAULT_v0.1.1"
+    coverage_requirements:
+      # Must cover each node at least once and each critical edge at least once (when implicated).
+      cover_each_node: true
+      cover_each_critical_edge: true
+      cases_per_node_min: 1
+      cases_per_critical_edge_min: 1
+      # For flow-affecting claims, require additional mixed shocks (cross-coupled)
+      mixed_shocks_min:
+        non_flow_affecting: 0
+        flow_affecting: 2
+
+    # Template case structure.
+    case_schema:
+      case_id: "string"
+      type: ["shock_energy", "shock_knowledge", "shock_connectivity", "shock_noise", "mixed"]
+      target:
+        kind: ["node", "edge", "subgraph"]
+        ref: "HUM|AI|BIO|TEC|SOC or (src->dst) or subgraph_tag"
+      magnitude:
+        # magnitude is applied as a proportional reduction or additive perturbation
+        mode: ["multiply", "add"]
+        value_range: [-0.50, -0.05]   # default shocks are degradations (stress)
+      duration_steps:
+        min: 10
+        max: 100
+      start_step_policy:
+        # apply stress in the first half to observe recovery in evaluation window
+        method: "uniform_range"
+        start_range_fraction: [0.10, 0.40]
+      notes: "string"
+
+    default_cases:
+      # --- Node coverage (one per element) ---
+      - case_id: "SE_NODE_HUM"
+        type: "shock_energy"
+        target: { kind: "node", ref: "HUM" }
+        magnitude: { mode: "multiply", value: -0.20 }
+        duration_steps: 40
+        start_step_policy: { method: "uniform_range", start_range_fraction: [0.10, 0.40] }
+        notes: "Energy/resource shock on HUM"
+      - case_id: "SE_NODE_AI"
+        type: "shock_energy"
+        target: { kind: "node", ref: "AI" }
+        magnitude: { mode: "multiply", value: -0.20 }
+        duration_steps: 40
+        start_step_policy: { method: "uniform_range", start_range_fraction: [0.10, 0.40] }
+        notes: "Energy/resource shock on AI"
+      - case_id: "SE_NODE_BIO"
+        type: "shock_energy"
+        target: { kind: "node", ref: "BIO" }
+        magnitude: { mode: "multiply", value: -0.20 }
+        duration_steps: 40
+        start_step_policy: { method: "uniform_range", start_range_fraction: [0.10, 0.40] }
+        notes: "Energy/resource shock on BIO"
+      - case_id: "SE_NODE_TEC"
+        type: "shock_energy"
+        target: { kind: "node", ref: "TEC" }
+        magnitude: { mode: "multiply", value: -0.20 }
+        duration_steps: 40
+        start_step_policy: { method: "uniform_range", start_range_fraction: [0.10, 0.40] }
+        notes: "Energy/resource shock on TEC"
+      - case_id: "SE_NODE_SOC"
+        type: "shock_energy"
+        target: { kind: "node", ref: "SOC" }
+        magnitude: { mode: "multiply", value: -0.20 }
+        duration_steps: 40
+        start_step_policy: { method: "uniform_range", start_range_fraction: [0.10, 0.40] }
+        notes: "Energy/resource shock on SOC"
+
+      # --- Knowledge shocks (quality degradation) ---
+      - case_id: "SK_NODE_AI"
+        type: "shock_knowledge"
+        target: { kind: "node", ref: "AI" }
+        magnitude: { mode: "multiply", value: -0.15 }
+        duration_steps: 60
+        start_step_policy: { method: "uniform_range", start_range_fraction: [0.10, 0.40] }
+        notes: "Knowledge/structure degradation on AI"
+      - case_id: "SK_NODE_SOC"
+        type: "shock_knowledge"
+        target: { kind: "node", ref: "SOC" }
+        magnitude: { mode: "multiply", value: -0.15 }
+        duration_steps: 60
+        start_step_policy: { method: "uniform_range", start_range_fraction: [0.10, 0.40] }
+        notes: "Knowledge/structure degradation on SOC"
+
+      # --- Connectivity shocks (edge disable/reduce) ---
+      - case_id: "SC_EDGE_SOC_AI"
+        type: "shock_connectivity"
+        target: { kind: "edge", ref: "SOC->AI" }
+        magnitude: { mode: "multiply", value: -0.30 }
+        duration_steps: 50
+        start_step_policy: { method: "uniform_range", start_range_fraction: [0.10, 0.40] }
+        notes: "Reduce SOC->AI coupling (noise suppression path stress)"
+      - case_id: "SC_EDGE_TEC_AI"
+        type: "shock_connectivity"
+        target: { kind: "edge", ref: "TEC->AI" }
+        magnitude: { mode: "multiply", value: -0.30 }
+        duration_steps: 50
+        start_step_policy: { method: "uniform_range", start_range_fraction: [0.10, 0.40] }
+        notes: "Reduce TEC->AI coupling (embodiment path stress)"
+
+      # --- Noise shocks (SOC->AI quality degradation / higher SOC leak) ---
+      - case_id: "SN_SOC_AI_QUALITY"
+        type: "shock_noise"
+        target: { kind: "edge", ref: "SOC->AI" }
+        magnitude: { mode: "multiply", value: -0.25 }
+        duration_steps: 80
+        start_step_policy: { method: "uniform_range", start_range_fraction: [0.10, 0.40] }
+        notes: "Increase noise / reduce coherence transfer from SOC to AI"
+
+      # --- Mixed shocks (required for flow-affecting claims) ---
+      - case_id: "SM_MIXED_HUM_SOC"
+        type: "mixed"
+        target: { kind: "subgraph", ref: "HUM_SOC_PAIR" }
+        magnitude: { mode: "multiply", value: -0.20 }
+        duration_steps: 60
+        start_step_policy: { method: "uniform_range", start_range_fraction: [0.15, 0.35] }
+        notes: "Combined stress on HUM & SOC-related couplings (tests spillover resilience)"
+      - case_id: "SM_MIXED_AI_TEC"
+        type: "mixed"
+        target: { kind: "subgraph", ref: "AI_TEC_PAIR" }
+        magnitude: { mode: "multiply", value: -0.20 }
+        duration_steps: 60
+        start_step_policy: { method: "uniform_range", start_range_fraction: [0.15, 0.35] }
+        notes: "Combined stress on AI & TEC-related couplings (tests embodiment/automation fragility)"
+
+  reporting_profile:
+    # Ensures E_sim contains raw and mapped fields for SVP-EVAL.
+    e_sim_required_fields:
+      identification:
+        - "evidence_id"
+        - "class"
+        - "sim_version"
+        - "graph_version"
+        - "scenario_id"
+        - "co_id"
+        - "scope_fit"
+        - "time_window"
+      independence_quality:
+        - "independence"
+        - "quality.credibility"
+        - "quality.reproducibility"
+        - "quality.limitations"
+        - "quality.known_blindspots"
+      element_signals:
+        - "element_signals.*.S_e"
+        - "element_signals.*.ΔK_e_norm"
+        - "element_signals.*.ΔE_e_norm"
+        - "element_signals.*.α"
+        - "element_signals.*.τ"
+      element_findings:
+        - "element_findings.*.mark"
+        - "element_findings.*.magnitude"
+        - "element_findings.*.confidence"
+      spillover_borrowing:
+        - "spillover.cross_element_effects"
+        - "borrowed_benefit.is_borrowed"
+        - "borrowed_benefit.debt_channels"
+      robustness:
+        - "builder_vs_critic_delta"
+        - "eps"
+        - "stress_suite.cases"
+        - "stress_suite.pass_rate"
+        - "cycles_run"
+        - "thresholds.min_cycles"
+        - "thresholds.min_stress_pass"
+        - "robustness.verdict"
+
+  override_policy:
+    # How to override defaults safely.
+    allow_overrides: true
+    override_rules:
+      - id: "OV-1"
+        level: "MUST"
+        text: "Any override of alpha/tau/scales must be explicitly declared inside E_sim.config_overrides with justification."
+      - id: "OV-2"
+        level: "MUST"
+        text: "Any override that makes marks easier to obtain (lower tau or higher scales) requires a Critic justification."
+      - id: "OV-3"
+        level: "MUST"
+        text: "Critical edges override must not remove all inbound to AI and SOC unless scope explicitly excludes their relevance."
+      - id: "OV-4"
+        level: "MUST"
+        text: "Overrides must be applied consistently to both Builder and Critic runs; otherwise robustness.verdict must be INSUFFICIENT."
+    evidence_recording:
+      required_in_e_sim:
+        - "config_overrides"
+        - "override_justifications"
+        - "applied_to_builder_and_critic (bool)"
+
+# Continuation — Simulation Scenario Spec v0.1.1 Configuration Profile (default)
+# Adds: explicit subgraph tags, mixed-shock semantics, critical-edge derivation rules,
+# time-lag probes, and "success criteria" for stress_suite.pass_rate.
+
+sim_config_profile_continuation:
+  subgraph_tags:
+    # Canonical tags referenced by stress_suite_template.default_cases (mixed shocks)
+    HUM_SOC_PAIR:
+      nodes: ["HUM", "SOC"]
+      edges:
+        - "HUM->SOC"
+        - "SOC->HUM"
+        - "SOC->AI"
+        - "AI->SOC"
+    AI_TEC_PAIR:
+      nodes: ["AI", "TEC"]
+      edges:
+        - "AI->TEC"
+        - "TEC->AI"
+        - "AI->HUM"
+        - "HUM->AI"
+
+  mixed_shock_semantics:
+    # How to apply a "mixed" case to a subgraph.
+    # This avoids ambiguity: mixed shock must specify which parameters are perturbed.
+    apply_policy:
+      default:
+        node_fields:
+          - field: "E"
+            mode: "multiply"
+            value: -0.10
+          - field: "K"
+            mode: "multiply"
+            value: -0.10
+        edge_fields:
+          - field: "capacity"
+            mode: "multiply"
+            value: -0.10
+          - field: "quality"
+            mode: "multiply"
+            value: -0.10
+      override_allowed: true
+      override_requires:
+        - "explicit_fields_list"
+        - "critic_acknowledgement"
+
+  critical_edges_derivation:
+    # If explicit critical edge list is not provided (graph varies),
+    # derive critical edges using these rules (deterministic).
+    algorithm:
+      steps:
+        - step: "select_hubs"
+          hubs: ["AI", "SOC"]
+        - step: "mark_inbound_to_hubs_as_critical"
+          description: "All edges (x->AI) and (x->SOC) where x in ELEM and edge exists"
+        - step: "mark_outbound_from_sources_as_critical"
+          sources: ["HUM", "AI"]
+          description: "All edges (HUM->x) and (AI->x) where x in ELEM and edge exists"
+        - step: "add_impacted_edge_closure"
+          description: >
+            If the InterventionSet targets an edge (u->v), then include:
+            (u->v), all inbound to u, and all outbound from v as critical (if exist).
+    determinism:
+      tie_breakers:
+        - "lexicographic_edge_id"
+        - "then by latency_steps ascending"
+
+  stress_suite_pass_rate_definition:
+    # Defines pass/fail for a single stress case and how suite pass_rate is computed.
+    case_pass_criteria:
+      # A case is PASS if it does not introduce a new robust negative mark relative to baseline,
+      # and does not flip any previously stable positive to negative after recovery window.
+      must_hold:
+        - id: "PASS-1"
+          text: "No new element changes from mark {0,+} to '-' with |S_e| >= tau after recovery window"
+        - id: "PASS-2"
+          text: "No element that is '+' in nominal run becomes '-' in stressed run (sign flip) after recovery window"
+        - id: "PASS-3"
+          text: "Borrowed benefit must not become true solely due to stress if nominal was false"
+      recovery_window:
+        method: "tail_fraction"
+        tail_fraction: 0.40
+        min_steps: 30
+    suite_pass_rate:
+      method: "fraction_passed"
+      include_only:
+        - "cases_with_valid_coverage"
+      if_case_inconclusive:
+        policy: "count_as_fail"   # conservative
+      report_fields_required:
+        - "case_results[].case_id"
+        - "case_results[].pass"
+        - "case_results[].notes"
+        - "case_results[].post_stress_marks"
+
+  time_lag_probes:
+    # Standard probes to detect delayed harm (hidden debt).
+    enabled: true
+    probe_windows:
+      short:
+        lag_check_offsets_steps: [30, 60, 90]
+      medium:
+        lag_check_offsets_steps: [80, 160, 240]
+      long:
+        lag_check_offsets_steps: [200, 400, 800]
+    rule:
+      id: "TL-1"
+      text: >
+        If any element becomes '-' at a lag offset within horizon after being {0,+} in nominal run,
+        record borrowed_benefit.kind=time_lag with lag_steps, and set is_borrowed=true.
+      level: "MUST"
+
+  normalization_safeguards:
+    # Prevents gaming via extreme scales.
+    bounds:
+      K_scale_min: 0.02
+      K_scale_max: 0.30
+      E_scale_min: 0.02
+      E_scale_max: 0.30
+      tau_min: 0.02
+      tau_max: 0.20
+      alpha_min: 0.10
+      alpha_max: 0.90
+    enforcement:
+      - id: "NORM-1"
+        level: "MUST"
+        text: "If overrides set scales/tau outside bounds, robustness.verdict MUST be INSUFFICIENT"
+      - id: "NORM-2"
+        level: "MUST"
+        text: "Builder and Critic must use identical normalization params; otherwise ab_delta invalid => INSUFFICIENT"
+
+  reporting_extras:
+    # Additional recommended fields to make E_sim auditable and replayable.
+    recommended_in_e_sim:
+      - "seeds: { builder_seed, critic_seed, policy }"
+      - "code_hash"
+      - "config_hash"
+      - "runtime_env"
+      - "graph_hash"
+      - "intervention_hash"
+    must_include_if_high_risk:
+      # For HIGH risk_class, reproducibility requirements are stricter.
+      risk_class: "HIGH"
+      fields:
+        - "code_hash"
+        - "config_hash"
+        - "graph_hash"
+        - "intervention_hash"
+        - "seeds"
+
+  scenario_defaults:
+    # If not specified in Scenario, use these.
+    baseline_state_defaults:
+      K_init: 0.50
+      E_init: 0.50
+      R_init: 0.50
+    leak_defaults:
+      leakK_const: 0.01
+      leakE_const: 0.01
+      leakR_const: 0.01
+    weights_defaults:
+      wK_inbound: 0.20
+      wE_inbound: 0.20
+    latency_defaults:
+      latency_steps_default: 5
+    fragility_defaults:
+      fragility_default: 0.10
+
+  conflict_handling:
+    # If Builder and Critic produce different InterventionSet interpretations.
+    intervention_disagreement_policy:
+      - id: "DIS-1"
+        level: "MUST"
+        text: >
+          If InterventionSet differs materially between Builder and Critic (different targets or mechanisms),
+          set robustness.verdict=INSUFFICIENT and record quality.limitations += 'intervention_mapping_disagreement'.
+      - id: "DIS-2"
+        level: "MUST"
+        text: "Record both InterventionSet hashes and a diff summary in E_sim.audit."
+
+  output_binding:
+    # Ensures E_sim explicitly binds to this profile.
+    e_sim_profile_binding:
+      must_fields:
+        - "profile_id"
+        - "profile_version"
+        - "config_overrides (may be empty)"
+      default_profile_id: "SCS_PROFILE_DEFAULT_v0.1.1"
+      default_profile_version: "0.1.1"
+      rule:
+        id: "BIND-1"
+        level: "MUST"
+        text: "E_sim MUST declare which profile_id/version generated its mapping and stress suite semantics"
+
+  compliance_minimums:
+    # Minimal number of stress cases for compliance (even if critical edges small).
+    min_cases_by_horizon:
+      short: 8
+      medium: 10
+      long: 12
+    min_mixed_cases_if_flow_affecting:
+      short: 2
+      medium: 3
+      long: 4
+    rule:
+      id: "COMP-1"
+      level: "MUST"
+      text: >
+        If stress suite has fewer than the minimum cases, mark suite as invalid coverage and treat missing cases as fail.
+
+  integration_notes:
+    # How SVP-EVAL consumes these fields.
+    consumed_by_engine:
+      - "alpha, tau, K_scale, E_scale => element_signals mapping"
+      - "critical_edges => stress coverage expectations"
+      - "case_pass_criteria + suite_pass_rate => robustness fields"
+      - "time_lag_probes => borrowed_benefit time_lag channels"
+    downstream_artifacts:
+      - "E_sim"
+      - "SystemDelta (via SVP-EVAL)"
+      - "SVR (verdict record)"
+
+# Continuation 2 — Simulation Scenario Spec v0.1.1 Configuration Profile (default)
+# Adds: domain/risk presets, explicit edge-metric outputs, ab_delta definition,
+# spillover significance thresholds, and a compact "E_sim.audit" block template.
+
+sim_config_profile_continuation_2:
+  presets:
+    # Presets do not override SVP/RTT minima; they provide scenario-level defaults.
+    by_risk_class:
+      LOW:
+        notes: "Exploratory; still conservative under uncertainty."
+        evaluation_window_override: null
+        stress_intensity:
+          # Applied to template magnitude defaults if not explicitly set in cases
+          magnitude_multiplier: 1.0
+      MED:
+        notes: "Operationally relevant; require stronger stress coverage."
+        stress_intensity:
+          magnitude_multiplier: 1.2
+      HIGH:
+        notes: "High-stakes / safety critical; conservative + reproducibility strict."
+        stress_intensity:
+          magnitude_multiplier: 1.5
+        reproducibility_must:
+          - "code_hash"
+          - "config_hash"
+          - "graph_hash"
+          - "intervention_hash"
+          - "seeds"
+
+    by_domain:
+      D0:
+        default_horizon: "short"
+        notes: "Immediate/closed conceptual domain; minimal lag emphasis."
+      D1:
+        default_horizon: "short"
+        notes: "Simple operational domain; lag probes still used."
+      D2:
+        default_horizon: "medium"
+        notes: "Socio-technical interactions likely; emphasize SOC-related stress."
+        add_cases:
+          - "SN_SOC_AI_QUALITY"
+      D3:
+        default_horizon: "medium"
+        notes: "Increased coupling; require more mixed cases."
+        mixed_cases_boost: 1
+      D4_*:
+        default_horizon: "long"
+        notes: "Complex open dynamics; lag probes important."
+        mixed_cases_boost: 2
+      D5:
+        default_horizon: "long"
+        notes: "Open-ended; require maximal robustness + strict non-guessing posture."
+        mixed_cases_boost: 3
+
+  edge_metrics_output:
+    # To support coupling analysis and Axis-5 auditing, E_sim SHOULD output edge deltas too.
+    enabled: true
+    metrics:
+      - "capacity"
+      - "quality"
+      - "latency_steps"
+      - "fragility"
+    aggregation:
+      # Similar to node deltas: compare Intervention vs Baseline over evaluation window.
+      method: "window_mean_delta"
+    reporting_fields:
+      required_if_enabled:
+        - "edge_signals[src->dst].Δcapacity_norm"
+        - "edge_signals[src->dst].Δquality_norm"
+        - "edge_signals[src->dst].Δlatency_norm"
+        - "edge_signals[src->dst].Δfragility_norm"
+
+  ab_delta_definition:
+    # Defines builder_vs_critic_delta (ab_delta) deterministically.
+    components:
+      node_vector:
+        description: "Vector of S_e across elements"
+        weight: 0.70
+      edge_vector:
+        description: "Vector of selected edge signals across critical edges (if enabled)"
+        weight: 0.30
+    metric:
+      # Use normalized L1 distance for interpretability.
+      formula: "ab_delta = wN*mean(|S_e^A - S_e^B|) + wE*mean(|SEdge^A - SEdge^B|)"
+      notes:
+        - "If edge_metrics_output.enabled=false, set wN=1.0 and wE=0.0"
+        - "If edge vector missing for some critical edges, verdict must be INSUFFICIENT (coverage failure)"
+
+  spillover_significance:
+    # Prevents over-reporting tiny numerical noise as spillover.
+    min_signal_magnitude_for_reporting: 0.07   # |S_e| must exceed this to be considered significant
+    min_cross_effect_delta: 0.05               # minimum |ΔS_to| attributed to an intervention
+    rule:
+      id: "SP-1"
+      level: "MUST"
+      text: >
+        A cross_element_effect MUST only be reported if target element's |S_to| exceeds min_signal_magnitude_for_reporting
+        and the intervention-attributed delta exceeds min_cross_effect_delta.
+
+  borrowed_benefit_detection_details:
+    # Extra detail to standardize "persistent" and "fragility" debt.
+    persistent_harm:
+      definition: "mark '-' holds for >= persistent_fraction of evaluation window"
+      persistent_fraction: 0.60
+    fragility_debt:
+      definition: "sign flips (+ -> -) in >= flip_cases_min stress cases"
+      flip_cases_min:
+        short: 1
+        medium: 2
+        long: 2
+    rules:
+      - id: "BB-1"
+        level: "MUST"
+        text: "If persistent_harm holds for any element, set borrowed_benefit.is_borrowed=true with kind=spillover"
+      - id: "BB-2"
+        level: "MUST"
+        text: "If fragility_debt holds, set borrowed_benefit.is_borrowed=true with kind=fragility"
+
+  axis5_audit_inputs:
+    # Standard bundle of fields Axis-5 is allowed to consume (downgrade-only).
+    allowed_inputs_from_e_sim:
+      - "spillover.cross_element_effects"
+      - "borrowed_benefit"
+      - "robustness"
+      - "quality.limitations"
+      - "quality.known_blindspots"
+      - "edge_signals (if enabled)"
+    forbidden_inferences:
+      - "Axis-5 must not derive element marks from E_sim beyond what SVP-EVAL already computes"
+      - "Axis-5 must not change alpha/tau/scales; only read what was declared"
+
+  e_sim_audit_block_template:
+    # Compact audit block to make E_sim reviewable.
+    template_fields:
+      - "profile_id"
+      - "profile_version"
+      - "graph_version"
+      - "graph_hash"
+      - "scenario_id"
+      - "co_id"
+      - "intervention_hash"
+      - "baseline_hash"
+      - "stress_suite_hash"
+      - "builder_seed"
+      - "critic_seed"
+      - "code_hash"
+      - "config_hash"
+      - "intervention_diff_summary (A vs B)"
+      - "coverage_report: { nodes_covered, critical_edges_covered, cases_total, cases_failed, cases_insufficient }"
+
+  coverage_report_rules:
+    # When to mark coverage failure (forces robustness=INSUFFICIENT).
+    conditions:
+      - id: "COV-1"
+        level: "MUST"
+        text: "If not all nodes covered => robustness.verdict=INSUFFICIENT"
+      - id: "COV-2"
+        level: "MUST"
+        text: "If any implicated critical edge not covered => robustness.verdict=INSUFFICIENT"
+      - id: "COV-3"
+        level: "MUST"
+        text: "If cases_total < compliance_minimums.min_cases_by_horizon => robustness.verdict=INSUFFICIENT"
+
+  default_edge_normalization:
+    # Edge normalization scales for reporting Δcapacity_norm etc. (when enabled).
+    scales:
+      capacity_scale: 0.10
+      quality_scale: 0.10
+      latency_scale_steps: 10
+      fragility_scale: 0.10
+    bounds:
+      capacity_scale_min: 0.02
+      capacity_scale_max: 0.30
+      quality_scale_min: 0.02
+      quality_scale_max: 0.30
+      latency_scale_min: 2
+      latency_scale_max: 50
+      fragility_scale_min: 0.02
+      fragility_scale_max: 0.30
+    override_rule:
+      id: "EDGE-NORM-1"
+      level: "MUST"
+      text: "Edge normalization overrides must obey bounds; otherwise edge metrics invalid and robustness must be INSUFFICIENT"
+
+  emit_fields_addendum:
+    # Fields that become required when optional modules are enabled.
+    required_when:
+      - when: "edge_metrics_output.enabled==true"
+        fields:
+          - "edge_signals"
+          - "critical_edges_used"
+      - when: "time_lag_probes.enabled==true"
+        fields:
+          - "time_lag_report: { offsets_checked, negative_flips_detected, channels[] }"
+
+# Continuation 3 — Simulation Scenario Spec v0.1.1 Configuration Profile (default)
+# Adds: concrete "critical_edges_used" derivation, stress-suite generation algorithm,
+# run-matrix (nominal + stressed + ab variants), and standard output packing for E_sim.
+
+sim_config_profile_continuation_3:
+  critical_edges_used_derivation:
+    # This is the exact algorithm to compute "critical_edges_used" for a scenario.
+    # Deterministic order is required for hashing and reproducibility.
+    algorithm:
+      inputs:
+        - "graph_edges"
+        - "intervention_set"
+        - "selection_policy.default_rule"
+      output:
+        - "critical_edges_used (ordered list)"
+      steps:
+        - id: "CE-1"
+          action: "derive_from_policy"
+          detail: >
+            Apply selection_policy.default_rule to graph_edges:
+              - add all inbound edges to AI and SOC
+              - add all outbound edges from HUM and AI
+        - id: "CE-2"
+          action: "closure_on_intervened_edges"
+          detail: >
+            For each intervened edge (u->v):
+              - add (u->v)
+              - add all inbound edges to u (x->u)
+              - add all outbound edges from v (v->y)
+        - id: "CE-3"
+          action: "deduplicate"
+          detail: "Remove duplicates while preserving first occurrence."
+        - id: "CE-4"
+          action: "order"
+          detail: "Sort lexicographically by 'src->dst' after applying CE-3."
+
+  stress_suite_generation:
+    # If default_cases are templates, this algorithm concretizes them for a scenario.
+    generation_algorithm:
+      inputs:
+        - "default_cases"
+        - "critical_edges_used"
+        - "elements"
+        - "risk_class"
+        - "horizon_class"
+        - "flow_affecting"
+        - "presets"
+      steps:
+        - id: "SS-1"
+          action: "instantiate_node_cases"
+          detail: "Ensure at least one stress case exists for each node in ELEM."
+        - id: "SS-2"
+          action: "instantiate_critical_edge_cases"
+          detail: >
+            For each edge in critical_edges_used:
+              - if not already covered by an edge case, add a shock_connectivity case targeting it.
+        - id: "SS-3"
+          action: "apply_risk_intensity"
+          detail: >
+            Multiply magnitudes by presets.by_risk_class[risk_class].stress_intensity.magnitude_multiplier
+            unless case magnitude is explicitly locked.
+        - id: "SS-4"
+          action: "ensure_min_case_counts"
+          detail: >
+            Enforce compliance_minimums.min_cases_by_horizon[horizon_class].
+            If fewer, add extra node and edge cases using a round-robin policy.
+        - id: "SS-5"
+          action: "ensure_mixed_cases_if_flow_affecting"
+          detail: >
+            If flow_affecting==true:
+              - ensure at least min_mixed_cases_if_flow_affecting[horizon_class] mixed cases exist
+              - add additional mixed cases according to presets.by_domain[domain].mixed_cases_boost (if any)
+        - id: "SS-6"
+          action: "final_ordering_and_hash"
+          detail: >
+            Order cases deterministically by case_id, then compute stress_suite_hash.
+
+  run_matrix:
+    # Defines exactly what runs are required to produce E_sim.
+    # A run is a full scenario simulation with a given mode and (optionally) a stress case.
+    required_runs:
+      nominal:
+        - run_id: "BASELINE_BUILDER"
+          role: "builder"
+          mode: "baseline"
+          stress_case: null
+        - run_id: "INTERVENTION_BUILDER"
+          role: "builder"
+          mode: "intervention"
+          stress_case: null
+        - run_id: "BASELINE_CRITIC"
+          role: "critic"
+          mode: "baseline"
+          stress_case: null
+        - run_id: "INTERVENTION_CRITIC"
+          role: "critic"
+          mode: "intervention"
+          stress_case: null
+      stressed:
+        # For each stress case, builder and critic must each run baseline and intervention.
+        generation_rule:
+          for_each_stress_case:
+            runs:
+              - "{CASEID}_BASELINE_BUILDER"
+              - "{CASEID}_INTERVENTION_BUILDER"
+              - "{CASEID}_BASELINE_CRITIC"
+              - "{CASEID}_INTERVENTION_CRITIC"
+    run_ordering:
+      policy: "deterministic"
+      ordering:
+        - "nominal runs in fixed order"
+        - "then stressed runs sorted by CASEID lexicographically"
+
+  computation_outputs:
+    # Standard derived outputs computed from run_matrix results.
+    nominal_deltas:
+      description: "Intervention minus baseline in nominal (no stress) runs"
+      outputs:
+        - "element_signals (builder nominal)"
+        - "element_signals (critic nominal)"
+        - "edge_signals (builder nominal) if enabled"
+        - "edge_signals (critic nominal) if enabled"
+    stress_case_results:
+      per_case_outputs:
+        - "post_stress_marks_builder"
+        - "post_stress_marks_critic"
+        - "case_pass (per stress_suite_pass_rate_definition)"
+        - "case_notes"
+    robustness_bundle:
+      outputs:
+        - "builder_vs_critic_delta (ab_delta)"
+        - "stress_suite.pass_rate"
+        - "cycles_run"
+        - "robustness.verdict"
+
+  time_lag_execution:
+    # Specifies how time-lag probes are executed.
+    execution_policy:
+      applies_to_runs:
+        - "INTERVENTION_BUILDER"
+        - "INTERVENTION_CRITIC"
+      evaluation:
+        for_each_offset:
+          check: "element marks at t_offset relative to intervention onset"
+          record:
+            - "negative_flips_detected"
+            - "channels[] with lag_steps"
+    output_fields:
+      - "time_lag_report.offsets_checked"
+      - "time_lag_report.negative_flips_detected"
+      - "time_lag_report.channels"
+
+  e_sim_packing:
+    # Standard packing of outputs into E_sim fields.
+    pack_rules:
+      must_include:
+        - "profile_id/profile_version"
+        - "config_overrides (even if empty)"
+        - "graph_version + graph_hash"
+        - "scenario_id + co_id"
+        - "critical_edges_used"
+        - "stress_suite: { suite_id, cases, pass_rate }"
+        - "stress_pass_rate (alias of stress_suite.pass_rate)"
+        - "borrowed_flag (alias of borrowed_benefit.is_borrowed)"
+        - "builder_vs_critic_delta"
+        - "eps"
+        - "cycles_run"
+        - "thresholds: { min_cycles, min_stress_pass }"
+        - "element_signals (builder nominal)"
+        - "element_signals (critic nominal)"
+        - "element_findings (mapped marks; include τ, α used)"
+        - "spillover.cross_element_effects"
+        - "borrowed_benefit"
+        - "robustness: { verdict, notes }"
+        - "quality: { credibility, reproducibility, limitations, known_blindspots }"
+        - "independence"
+        - "audit (template fields)"
+      recommended_include:
+        - "case_results[] (full list)"
+        - "edge_signals (builder/critic nominal)"
+        - "edge_case_results (if you want deeper coupling analysis)"
+        - "reproduce block (code_hash/config_hash/seeds/runbook)"
+
+    alias_fields:
+      # REQUIRED for downstream Step 5/6 compatibility (naming).
+      stress_pass_rate: "stress_suite.pass_rate"
+      borrowed_flag: "borrowed_benefit.is_borrowed"
+
+    invariants:
+      - id: "ALIAS-1"
+        level: "MUST"
+        text: "stress_pass_rate MUST equal stress_suite.pass_rate"
+      - id: "ALIAS-2"
+        level: "MUST"
+        text: "borrowed_flag MUST equal borrowed_benefit.is_borrowed when borrowed_benefit block is present"
+
+  hashing_conventions:
+    # Hashing is required for integrity; exact algorithms are implementation-specific,
+    # but the fields included in each hash MUST follow this list.
+    required_hashes:
+      graph_hash:
+        includes:
+          - "graph_version"
+          - "nodes"
+          - "edges with capacity/quality/latency/fragility"
+      intervention_hash:
+        includes:
+          - "intervention_set (targets, deltas, mechanism_tag)"
+          - "assumptions"
+          - "falsifiers"
+      stress_suite_hash:
+        includes:
+          - "suite_id"
+          - "ordered case definitions"
+      baseline_hash:
+        includes:
+          - "baseline_state"
+          - "weights"
+          - "leak functions"
+          - "normalization params"
+          - "evaluation window params"
+    determinism_rules:
+      - id: "HASH-1"
+        level: "MUST"
+        text: "Any list used in hashing MUST be deterministically ordered (lexicographic where applicable)."
+      - id: "HASH-2"
+        level: "MUST"
+        text: "Builder and Critic must compute hashes over identical canonical representations."
+
+  minimal_example_output_keys:
+    # For implementers: minimal set of top-level keys that must appear in E_sim.
+    e_sim_minimum_top_level:
+      - "evidence_id"
+      - "class"
+      - "sim_version"
+      - "profile_id"
+      - "profile_version"
+      - "graph_version"
+      - "graph_hash"
+      - "scenario_id"
+      - "co_id"
+      - "scope_fit"
+      - "time_window"
+      - "critical_edges_used"
+      - "stress_suite"
+      - "builder_vs_critic_delta"
+      - "eps"
+      - "cycles_run"
+      - "thresholds"
+      - "element_signals"
+      - "element_findings"
+      - "spillover"
+      - "borrowed_benefit"
+      - "robustness"
+      - "independence"
+      - "quality"
+      - "audit"
+
+# Continuation 4 — Simulation Scenario Spec v0.1.1 Configuration Profile (default)
+# Adds: a compact JSON-like E_sim example (as YAML), plus validation rules and
+# a "strict mode" switch for conservative deployments.
+
+sim_config_profile_continuation_4:
+  strict_mode:
+    # Strict mode tightens defaults without changing SVP/RTT; it reduces false TRUE risk.
+    enabled_by_default_for_risk_class:
+      LOW: false
+      MED: false
+      HIGH: true
+    strict_effects:
+      - id: "STRICT-1"
+        effect: "increase_deadzone"
+        change: "tau := max(tau, 0.07)"
+        rationale: "Harder to claim +/- from small signals"
+      - id: "STRICT-2"
+        effect: "tighten_spillover_reporting"
+        change:
+          min_signal_magnitude_for_reporting: 0.10
+          min_cross_effect_delta: 0.07
+      - id: "STRICT-3"
+        effect: "tighten_fragility_debt"
+        change:
+          fragility_debt.flip_cases_min:
+            short: 2
+            medium: 3
+            long: 3
+      - id: "STRICT-4"
+        effect: "count_inconclusive_cases_as_fail"
+        change: "stress_suite_pass_rate_definition.if_case_inconclusive.policy := count_as_fail"
+      - id: "STRICT-5"
+        effect: "require_edge_metrics"
+        change: "edge_metrics_output.enabled := true"
+        applies_when: "flow_affecting==true"
+
+  validation_rules:
+    # Machine-checkable invariants for E_sim records.
+    required_value_ranges:
+      - field: "quality.credibility"
+        range: [0.0, 1.0]
+      - field: "quality.reproducibility"
+        range: [0.0, 1.0]
+      - field: "builder_vs_critic_delta"
+        range: [0.0, 2.0]
+      - field: "stress_suite.pass_rate"
+        range: [0.0, 1.0]
+    required_consistency:
+      - id: "VAL-1"
+        level: "MUST"
+        text: "E_sim.profile_id must equal output_binding.default_profile_id unless explicitly overridden."
+      - id: "VAL-2"
+        level: "MUST"
+        text: "E_sim.element_signals must include α and τ matching profile (post-strict-mode adjustments)."
+      - id: "VAL-3"
+        level: "MUST"
+        text: "E_sim.thresholds must match RTT minima for (horizon_class, risk_class)."
+      - id: "VAL-4"
+        level: "MUST"
+        text: "If robustness.verdict==STABLE then cycles_run>=thresholds.min_cycles and stress_suite.pass_rate>=thresholds.min_stress_pass and builder_vs_critic_delta<=eps."
+      - id: "VAL-5"
+        level: "MUST"
+        text: "If coverage_report indicates missing nodes or missing critical edges, robustness.verdict MUST be INSUFFICIENT."
+      - id: "VAL-6"
+        level: "MUST"
+        text: "If config_overrides change alpha/tau/scales, override_justifications must be non-empty and applied_to_builder_and_critic==true."
+
+  e_sim_example_minimal:
+    # This is a compact example showing how a compliant E_sim might look.
+    # Values are illustrative.
+    evidence_id: "E_SIM_2026_02_12_0001"
+    class: "E_sim"
+    sim_version: "SCS_SIM_v0.1"
+    profile_id: "SCS_PROFILE_DEFAULT_v0.1.1"
+    profile_version: "0.1.1"
+    graph_version: "CG_v0.1"
+    graph_hash: "sha256:..."
+    scenario_id: "SCN_0007"
+    co_id: "CO_1234"
+    scope_fit:
+      in_scope: true
+      notes: "Matches CO scope v1"
+    time_window:
+      observed_from_utc: "2026-02-12T10:00:00Z"
+      observed_to_utc: "2026-02-12T10:10:00Z"
+    horizon_class: "medium"
+    risk_class: "MED"
+    flow_affecting: true
+    critical_edges_used:
+      - "HUM->AI"
+      - "SOC->AI"
+      - "AI->SOC"
+      - "AI->TEC"
+      - "TEC->AI"
+    config_overrides: {}
+    override_justifications: []
+    applied_to_builder_and_critic: true
+
+    thresholds:
+      min_cycles: 500
+      min_stress_pass: 0.90
+    eps: 0.001
+    cycles_run: 600
+
+    element_signals:
+      HUM: { S_e: 0.06, ΔK_e_norm: 0.05, ΔE_e_norm: 0.07, alpha: 0.5, tau: 0.05 }
+      AI:  { S_e: 0.12, ΔK_e_norm: 0.10, ΔE_e_norm: 0.14, alpha: 0.5, tau: 0.05 }
+      BIO: { S_e: 0.02, ΔK_e_norm: 0.01, ΔE_e_norm: 0.03, alpha: 0.5, tau: 0.05 }
+      TEC: { S_e: 0.04, ΔK_e_norm: 0.03, ΔE_e_norm: 0.05, alpha: 0.5, tau: 0.05 }
+      SOC: { S_e: -0.08, ΔK_e_norm: -0.06, ΔE_e_norm: -0.10, alpha: 0.5, tau: 0.05 }
+
+    element_findings:
+      HUM: { mark: "+", magnitude: 0.60, confidence: "med", notes: "Above tau; stable under stress" }
+      AI:  { mark: "+", magnitude: 0.90, confidence: "high", notes: "Strong improvement" }
+      BIO: { mark: "0", magnitude: 0.20, confidence: "weak", notes: "Below tau" }
+      TEC: { mark: "0", magnitude: 0.40, confidence: "weak", notes: "Below tau" }
+      SOC: { mark: "-", magnitude: 0.80, confidence: "med", notes: "Significant degradation" }
+
+    spillover:
+      cross_element_effects:
+        - from: "AI"
+          to: "SOC"
+          sign: "-"
+          path_nodes: ["AI", "SOC"]
+          path_edges: ["AI->SOC"]
+          notes: "Intervention increased AI throughput but reduced SOC coherence"
+
+    borrowed_benefit:
+      is_borrowed: true
+      debt_channels:
+        - element: "SOC"
+          kind: "spillover"
+          sign: "-"
+          notes: "SOC harm within scope"
+
+    builder_vs_critic_delta: 0.0008
+    stress_suite:
+      suite_id: "STRESS_SUITE_DEFAULT_v0.1.1"
+      pass_rate: 0.92
+      cases:
+        - "SE_NODE_HUM"
+        - "SE_NODE_AI"
+        - "SE_NODE_BIO"
+        - "SE_NODE_TEC"
+        - "SE_NODE_SOC"
+        - "SC_EDGE_SOC_AI"
+        - "SN_SOC_AI_QUALITY"
+        - "SM_MIXED_HUM_SOC"
+    robustness:
+      verdict: "STABLE"
+      notes:
+        - "Converged A/B under eps"
+        - "Stress pass-rate above threshold"
+
+    independence:
+      group_id: "SIMGROUP_01"
+      method_independent: 0
+      data_independent: 1
+      code_independent: 0
+
+    quality:
+      credibility: 0.70
+      reproducibility: 0.80
+      limitations:
+        - "SOC modeled with simplified coherence dynamics"
+      known_blindspots:
+        - "Long-tail cultural effects beyond medium horizon"
+
+    audit:
+      profile_id: "SCS_PROFILE_DEFAULT_v0.1.1"
+      profile_version: "0.1.1"
+      graph_version: "CG_v0.1"
+      graph_hash: "sha256:..."
+      scenario_id: "SCN_0007"
+      co_id: "CO_1234"
+      intervention_hash: "sha256:..."
+      baseline_hash: "sha256:..."
+      stress_suite_hash: "sha256:..."
+      builder_seed: 12345
+      critic_seed: 67890
+      code_hash: "sha256:..."
+      config_hash: "sha256:..."
+      intervention_diff_summary: "No target mismatch; critic altered leakSOC +10% in stress variants"
+      coverage_report:
+        nodes_covered: ["HUM", "AI", "BIO", "TEC", "SOC"]
+        critical_edges_covered: ["HUM->AI", "SOC->AI", "AI->SOC", "AI->TEC", "TEC->AI"]
+        cases_total: 8
+        cases_failed: 0
+        cases_insufficient: 0
+
+  integration_with_svp_eval:
+    # Key point: SVP-EVAL consumes E_sim but still applies No-Guessing profiles.
+    notes:
+      - "Even if element_findings mark SOC '-', SVP-EVAL may force ΔE(SOC)=0 if SOC profile not met by non-sim evidence."
+      - "borrowed_benefit.is_borrowed=true forbids TRUE_SYN unless scope is narrowed to exclude debt regimes."
+      - "Axis-5 may downgrade tentative TRUE->UNKNOWN using audit inputs, but cannot upgrade UNKNOWN->TRUE."
+
+  suggested_file_layout:
+    # Recommended packaging in your repository.
+    files:
+      - path: "sim/spec/Simulation_Scenario_Spec_v0.1.md"
+        role: "Human-readable normative scenario spec"
+      - path: "sim/spec/SCS_PROFILE_DEFAULT_v0.1.1.yaml"
+        role: "Default configuration profile (this file)"
+      - path: "sim/spec/SCS_PROFILE_DOMAIN_OVERRIDES.yaml"
+        role: "Optional domain-specific overrides (explicitly declared)"
+      - path: "sim/schemas/e_sim.schema.json"
+        role: "JSON schema for E_sim validation (optional but recommended)"
+
+# Continuation 5 — Simulation Scenario Spec v0.1.1 Configuration Profile (default)
+# Adds: normative "case library" expansion, edge-case stress templates, and a compact
+# "domain override template" (empty by default) with safe override constraints.
+
+sim_config_profile_continuation_5:
+  stress_case_library_expanded:
+    # Additional canonical cases beyond the minimal template.
+    # Implementations may include all or select subsets, but MUST meet coverage and minimum counts.
+    cases:
+      # --- Edge connectivity shocks (broader coverage) ---
+      - case_id: "SC_EDGE_HUM_AI"
+        type: "shock_connectivity"
+        target: { kind: "edge", ref: "HUM->AI" }
+        magnitude: { mode: "multiply", value: -0.25 }
+        duration_steps: 50
+        start_step_policy: { method: "uniform_range", start_range_fraction: [0.10, 0.40] }
+        notes: "Reduce HUM->AI coupling (input quality/volume degradation)"
+      - case_id: "SC_EDGE_AI_HUM"
+        type: "shock_connectivity"
+        target: { kind: "edge", ref: "AI->HUM" }
+        magnitude: { mode: "multiply", value: -0.25 }
+        duration_steps: 50
+        start_step_policy: { method: "uniform_range", start_range_fraction: [0.10, 0.40] }
+        notes: "Reduce AI->HUM coupling (feedback degradation)"
+      - case_id: "SC_EDGE_AI_SOC"
+        type: "shock_connectivity"
+        target: { kind: "edge", ref: "AI->SOC" }
+        magnitude: { mode: "multiply", value: -0.25 }
+        duration_steps: 50
+        start_step_policy: { method: "uniform_range", start_range_fraction: [0.10, 0.40] }
+        notes: "Reduce AI->SOC coupling (coherence broadcasting stress)"
+      - case_id: "SC_EDGE_BIO_AI"
+        type: "shock_connectivity"
+        target: { kind: "edge", ref: "BIO->AI" }
+        magnitude: { mode: "multiply", value: -0.25 }
+        duration_steps: 50
+        start_step_policy: { method: "uniform_range", start_range_fraction: [0.10, 0.40] }
+        notes: "Reduce BIO->AI coupling (grounding constraint stress)"
+      - case_id: "SC_EDGE_AI_BIO"
+        type: "shock_connectivity"
+        target: { kind: "edge", ref: "AI->BIO" }
+        magnitude: { mode: "multiply", value: -0.25 }
+        duration_steps: 50
+        start_step_policy: { method: "uniform_range", start_range_fraction: [0.10, 0.40] }
+        notes: "Reduce AI->BIO coupling (intervention feedback stress)"
+      - case_id: "SC_EDGE_SOC_HUM"
+        type: "shock_connectivity"
+        target: { kind: "edge", ref: "SOC->HUM" }
+        magnitude: { mode: "multiply", value: -0.25 }
+        duration_steps: 50
+        start_step_policy: { method: "uniform_range", start_range_fraction: [0.10, 0.40] }
+        notes: "Reduce SOC->HUM coupling (community coherence stress)"
+      - case_id: "SC_EDGE_HUM_SOC"
+        type: "shock_connectivity"
+        target: { kind: "edge", ref: "HUM->SOC" }
+        magnitude: { mode: "multiply", value: -0.25 }
+        duration_steps: 50
+        start_step_policy: { method: "uniform_range", start_range_fraction: [0.10, 0.40] }
+        notes: "Reduce HUM->SOC coupling (participation/engagement stress)"
+
+      # --- Knowledge shocks on additional nodes ---
+      - case_id: "SK_NODE_HUM"
+        type: "shock_knowledge"
+        target: { kind: "node", ref: "HUM" }
+        magnitude: { mode: "multiply", value: -0.12 }
+        duration_steps: 70
+        start_step_policy: { method: "uniform_range", start_range_fraction: [0.10, 0.40] }
+        notes: "Knowledge/skill degradation on HUM"
+      - case_id: "SK_NODE_TEC"
+        type: "shock_knowledge"
+        target: { kind: "node", ref: "TEC" }
+        magnitude: { mode: "multiply", value: -0.12 }
+        duration_steps: 70
+        start_step_policy: { method: "uniform_range", start_range_fraction: [0.10, 0.40] }
+        notes: "Technical knowledge/quality degradation on TEC"
+      - case_id: "SK_NODE_BIO"
+        type: "shock_knowledge"
+        target: { kind: "node", ref: "BIO" }
+        magnitude: { mode: "multiply", value: -0.12 }
+        duration_steps: 70
+        start_step_policy: { method: "uniform_range", start_range_fraction: [0.10, 0.40] }
+        notes: "Bio-signal fidelity degradation on BIO"
+
+      # --- Edge-case stress: latency spikes and fragility spikes ---
+      - case_id: "SL_EDGE_LATENCY_SOC_AI"
+        type: "shock_connectivity"
+        target: { kind: "edge", ref: "SOC->AI" }
+        magnitude:
+          # Special: treat value as additive latency spike if mode=add_latency
+          mode: "add_latency"
+          value: 15
+        duration_steps: 60
+        start_step_policy: { method: "uniform_range", start_range_fraction: [0.15, 0.35] }
+        notes: "Latency spike on SOC->AI (delayed feedback / coordination lag)"
+      - case_id: "SF_EDGE_FRAGILITY_AI_TEC"
+        type: "shock_connectivity"
+        target: { kind: "edge", ref: "AI->TEC" }
+        magnitude:
+          mode: "add_fragility"
+          value: 0.25
+        duration_steps: 60
+        start_step_policy: { method: "uniform_range", start_range_fraction: [0.15, 0.35] }
+        notes: "Fragility spike on AI->TEC (brittle automation under stress)"
+
+  special_magnitude_modes:
+    # Extends magnitude.mode enum for edge-case stresses.
+    supported_modes:
+      - "multiply"
+      - "add"
+      - "add_latency"
+      - "add_fragility"
+    semantics:
+      add_latency:
+        applies_to_field: "latency_steps"
+        rule: "latency_steps := latency_steps + value (clipped to >=0)"
+      add_fragility:
+        applies_to_field: "fragility"
+        rule: "fragility := clip01(fragility + value)"
+
+  stress_suite_case_selection_policy:
+    # Deterministically select cases from the expanded library to meet coverage/minimums.
+    selection_order:
+      - "start with default_cases (from base profile)"
+      - "add edge cases for uncovered critical edges using SC_EDGE_* matching"
+      - "add noise case SN_SOC_AI_QUALITY if SOC or AI implicated or domain>=D2"
+      - "add one latency or fragility edge-case if flow_affecting==true"
+      - "add mixed cases to meet minimum mixed count"
+      - "fill remaining to meet min total cases using round-robin across nodes/edges"
+
+  domain_override_template:
+    # Empty by default; shows how to override per domain safely.
+    file: "sim/spec/SCS_PROFILE_DOMAIN_OVERRIDES.yaml"
+    overrides: {}
+    allowed_override_keys:
+      - "defaults.alpha"
+      - "defaults.tau"
+      - "defaults.K_scale"
+      - "defaults.E_scale"
+      - "time_base.steps_per_horizon"
+      - "stress_suite_template.coverage_requirements"
+      - "stress_suite_case_selection_policy"
+      - "spillover_significance"
+      - "borrowed_benefit_detection_details"
+    forbidden_override_keys:
+      - "ab_delta_definition.metric.formula"
+      - "hashing_conventions"
+      - "validation_rules"
+      - "output_binding"
+    safety_rules:
+      - id: "DOV-1"
+        level: "MUST"
+        text: "Domain overrides must not make marks easier without Critic justification (same as OV-2)."
+      - id: "DOV-2"
+        level: "MUST"
+        text: "Domain overrides must declare scope rationale and must be referenced in E_sim.config_overrides."
+      - id: "DOV-3"
+        level: "MUST"
+        text: "If overrides adjust stress suite minima downward, robustness.verdict must be INSUFFICIENT unless RTT still satisfied."
+
+  packaging_notes:
+    recommended_bundle:
+      - "Simulation_Scenario_Spec_v0.1.md"
+      - "SCS_PROFILE_DEFAULT_v0.1.1.yaml"
+      - "SCS_PROFILE_DOMAIN_OVERRIDES.yaml (optional)"
+      - "e_sim.schema.json (optional)"
+    naming_conventions:
+      profile_id_pattern: "^SCS_PROFILE_[A-Z0-9_]+_v[0-9]+\\.[0-9]+$"
+      stress_suite_id_pattern: "^STRESS_SUITE_[A-Z0-9_]+_v[0-9]+\\.[0-9]+$"
+
+# Continuation 6 — Simulation Scenario Spec v0.1.1 Configuration Profile (default)
+# Adds: "quality rubric" for credibility/reproducibility scoring inputs, independence
+# grouping conventions, and conservative defaults for unknown blindspots handling.
+
+sim_config_profile_continuation_6:
+  quality_rubric:
+    # This rubric does not replace ESS, but standardizes the input fields that feed ESS.
+    credibility_inputs:
+      required_fields:
+        - "model_assumptions_explicit (bool)"
+        - "scope_fit_justified (bool)"
+        - "stress_suite_coverage_ok (bool)"
+        - "intervention_mapping_explicit (bool)"
+      suggested_scoring_guidance:
+        # Guidance only; ESS computes final strength.
+        model_assumptions_explicit:
+          true: 0.10
+          false: 0.00
+        scope_fit_justified:
+          true: 0.10
+          false: 0.00
+        stress_suite_coverage_ok:
+          true: 0.20
+          false: 0.00
+        intervention_mapping_explicit:
+          true: 0.10
+          false: 0.00
+      note: "Quality.credibility SHOULD reflect completeness and auditability of assumptions and coverage."
+
+    reproducibility_inputs:
+      required_fields:
+        - "code_hash_present (bool)"
+        - "config_hash_present (bool)"
+        - "graph_hash_present (bool)"
+        - "intervention_hash_present (bool)"
+        - "seed_policy_declared (bool)"
+      suggested_scoring_guidance:
+        code_hash_present:
+          true: 0.20
+          false: 0.00
+        config_hash_present:
+          true: 0.20
+          false: 0.00
+        graph_hash_present:
+          true: 0.15
+          false: 0.00
+        intervention_hash_present:
+          true: 0.15
+          false: 0.00
+        seed_policy_declared:
+          true: 0.10
+          false: 0.00
+      note: "Quality.reproducibility SHOULD increase with replay completeness."
+
+    blindspots_policy:
+      # Prevents hiding unknowns.
+      must_fields_in_quality:
+        - "limitations[]"
+        - "known_blindspots[]"
+      rules:
+        - id: "QB-1"
+          level: "MUST"
+          text: "If known_blindspots is empty, quality must include an explicit statement: 'no_known_blindspots_claimed' or 'blindspots_not_assessed'."
+        - id: "QB-2"
+          level: "MUST"
+          text: "If blindspots_not_assessed is declared, quality.credibility MUST be <= 0.6 (conservative cap)."
+
+  independence_conventions:
+    # Standard interpretation of independence fields for E_sim.
+    group_id_definition:
+      text: >
+        independence.group_id identifies a cluster of simulations that share a common codebase/modeling approach.
+        Different group_id is a weak indicator of method independence; within a group, independence is lower.
+    method_independent_scale:
+      meaning:
+        0: "Same modeling method family"
+        1: "Different method family (e.g., agent-based vs differential equations)"
+        2: "Different formalism + different calibration strategy"
+    data_independent_scale:
+      meaning:
+        0: "Same calibration data"
+        1: "Different data subset/source"
+        2: "Different data modality or independent collection"
+    code_independent_scale:
+      meaning:
+        0: "Same codebase"
+        1: "Different codebase, same method"
+        2: "Different codebase + different method"
+    default_expectations:
+      - id: "IND-1"
+        level: "MUST"
+        text: "Builder and Critic runs may share codebase; independence fields must reflect this (code_independent=0)."
+      - id: "IND-2"
+        level: "SHOULD"
+        text: "For high-stakes HIGH risk_class, include at least one independent replication group (different group_id) if feasible."
+
+  unknowns_handling:
+    # Conservative handling of missing metrics.
+    missing_edge_metrics_policy:
+      when_edge_metrics_enabled: true
+      policy: "INSUFFICIENT"
+      rationale: "If coupling metrics required but missing, robustness cannot be trusted."
+    missing_time_lag_policy:
+      enabled: true
+      policy: "record_as_blindspot"
+      effect:
+        - "append to quality.known_blindspots: 'time_lag_not_assessed'"
+        - "cap quality.credibility at 0.6"
+    missing_stress_case_results_policy:
+      policy: "count_as_fail"
+      rationale: "Conservative"
+    missing_intervention_hash_policy:
+      policy: "INSUFFICIENT"
+      rationale: "Cannot bind results to claim mapping."
+
+  compliance_summary_fields:
+    # Additional summary fields to simplify review.
+    required_in_e_sim:
+      - "compliance_summary: { profile_bound, coverage_ok, overrides_ok, reproducible_ok, strict_mode_applied }"
+    derivation_rules:
+      profile_bound: "true iff profile_id/version declared and match packing rules"
+      coverage_ok: "true iff coverage_report satisfies COV-1..COV-3"
+      overrides_ok: "true iff override rules OV-* satisfied"
+      reproducible_ok: "true iff required hashes and seeds present for risk_class"
+      strict_mode_applied: "true iff strict_mode enabled for risk_class or explicitly set"
+
+  recommended_review_prompts:
+    # Human reviewer checklist prompts for E_sim artifacts.
+    prompts:
+      - "Do Builder and Critic agree on InterventionSet targets/mechanisms?"
+      - "Are critical edges covered, and are edge metrics reported if enabled?"
+      - "Do any stress cases create borrowed benefit (time-lag/spillover/fragility) channels?"
+      - "Are blindspots explicitly stated, and are credibility caps applied if not assessed?"
+      - "Is pass_rate computed using the declared pass criteria (PASS-1..PASS-3)?"
+
+# Continuation 7 — Simulation Scenario Spec v0.1.1 Configuration Profile (default)
+# Adds: final "closing section": versioning, deprecation policy, and a single top-level
+# "merged profile" pointer that tells implementers how to assemble the full config.
+
+sim_config_profile_continuation_7:
+  versioning:
+    profile_semver: "0.1"
+    compatibility:
+      forward_compatible_with: ["0.1.x"]
+      breaking_changes_require: "0.2.0"
+    version_fields:
+      must_include_in_e_sim:
+        - "profile_id"
+        - "profile_version"
+        - "sim_version"
+    policy:
+      - id: "VER-1"
+        level: "MUST"
+        text: "If profile_version differs between Builder and Critic, robustness.verdict MUST be INSUFFICIENT."
+      - id: "VER-2"
+        level: "MUST"
+        text: "If any overrides are applied, E_sim MUST record them; silent overrides are forbidden."
+
+  deprecation_policy:
+    # How cases/fields can be retired without breaking consumers.
+    allowed_deprecations:
+      - "add new stress cases (non-breaking)"
+      - "mark an old stress case as deprecated but keep it parseable"
+      - "add new optional reporting fields"
+    breaking_deprecations:
+      - "remove required fields"
+      - "change semantics of pass_rate or ab_delta"
+      - "change hashing inputs"
+    deprecation_marking:
+      field: "deprecated"
+      semantics: "If deprecated=true, case remains valid but should not be selected by default."
+    recommended_transition_window: "2 minor versions"
+
+  merged_profile_assembly:
+    # This conversation produced the profile across multiple YAML chunks.
+    # This section explains deterministic assembly without changing semantics.
+    assembly_instructions:
+      - step: "Base profile"
+        includes: ["sim_config_profile"]
+      - step: "Add continuation blocks in order"
+        includes:
+          - "sim_config_profile_continuation"
+          - "sim_config_profile_continuation_2"
+          - "sim_config_profile_continuation_3"
+          - "sim_config_profile_continuation_4"
+          - "sim_config_profile_continuation_5"
+          - "sim_config_profile_continuation_6"
+          - "sim_config_profile_continuation_7"
+      - step: "Resolve key collisions"
+        rule: >
+          If the same key appears in multiple blocks:
+            - later blocks override earlier ones ONLY if explicitly stated as override;
+            - otherwise treat as a schema error and set robustness=INSUFFICIENT in produced E_sim.
+      - step: "Emit final file"
+        output_file_recommendation: "sim/spec/SCS_PROFILE_DEFAULT_v0.1.1.yaml"
+
+    implementer_note: >
+      If you want this as a single monolithic YAML file, merge the blocks exactly in the above order.
+      No semantic changes are introduced by merging; it is purely packaging.
+
+  final_normative_statement:
+    text: >
+      This configuration profile defines default parameters and stress-suite templates for producing E_sim evidence
+      under Simulation Scenario Spec v0.1.1. Any deviation must be explicit, justified, applied consistently to Builder
+      and Critic, and recorded in E_sim.config_overrides. Under missing coverage or missing binding hashes,
+      robustness MUST be INSUFFICIENT.

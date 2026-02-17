@@ -1,0 +1,196 @@
+appendix_a_step5_templates_v1_2_2:
+  meta:
+    status: Normative
+    purpose: Machine-ingestible artifacts for STEP 6
+    step: STEP_5
+    version: 1.2.2
+    note: cluster_size and w_indep are post-consolidation fields (computed in STEP
+      5.8.3)
+  proofplan_template:
+    plan_id: PROOFPLAN_0001
+    class: ProofPlan
+    step: STEP_5
+    version: 1.2.2
+    co_id: CO_...
+    coupling_graph_binding:
+      coupling_graph_version: coupling_graph_v0.1.1
+      coupling_graph_hash: sha256:...
+    horizon_class: medium
+    risk_class: MED
+    claim_flow_affecting: true
+    selected_protocols:
+      U_required: true
+      S_simulation_required: true
+    policy_binding:
+      policy_config_ref: SVP-EVAL_PolicyPack_v0.1
+      policy_config_hash: sha256:...
+    stop_conditions:
+    - STOP_IF_NORMALIZATION_GAPS
+    - STOP_IF_SIM_REQUIRED_BUT_MISSING
+    required_checks_before_step6:
+    - normalization_completeness
+    - flow_affecting_compliance
+    - soc_bio_secondary_line_if_needed
+    - borrowed_benefit_fields_ready
+    - provenance_cluster_consolidated
+  evidenceset_template:
+    evidenceset_id: EVIDENCESET_0001
+    class: EvidenceSet
+    step: STEP_5
+    version: 1.2.2
+    co_id: CO_...
+    records: []
+    element_coverage:
+      HUM:
+        has_records: false
+        record_ids: []
+      AI:
+        has_records: true
+        record_ids:
+        - R_0001
+      BIO:
+        has_records: false
+        record_ids: []
+      TEC:
+        has_records: true
+        record_ids:
+        - R_0002
+      SOC:
+        has_records: false
+        record_ids: []
+    provenance_cluster_summary_ref: PROVCLUST_0001
+  element_evidence_record_schema:
+    record_id: R_0001
+    evidence_class: E_sim
+    element: AI
+    sign: +
+    magnitude: 0.35
+    credibility: 0.7
+    reproducibility: 0.6
+    independence:
+      method_independent: 1
+      data_independent: 0
+      code_independent: 1
+    robustness:
+      verdict: STABLE
+      notes: []
+    borrowed_flag: false
+    provenance:
+      source_id: doi:10.xxxx/xxxx
+      parent_source_id: null
+      dataset_id: null
+      lab_id: null
+      publisher_id: null
+      cluster_id: CL_DS_001
+      cluster_size: 3
+      w_indep: 0.333
+    refs:
+    - E_SIM_0001
+  e_sim_template:
+    e_sim_id: E_SIM_0001
+    class: E_sim
+    step: STEP_5
+    version: 1.2.2
+    co_id: CO_...
+    robustness:
+      verdict: STABLE
+      notes: []
+    builder_vs_critic_delta: -0.012
+    ab_delta: 0.012
+    stress_suite:
+      cases:
+      - STRESS_01
+      - STRESS_02
+      pass_rate: 0.95
+      case_results:
+      - case_id: STRESS_01
+        passed: true
+      - case_id: STRESS_02
+        passed: true
+    critical_edges_used:
+    - HUM->SOC
+    - TEC->BIO
+    borrowed_flag: false
+    borrowed_benefit:
+      debt_channels: []
+      notes: []
+    audit:
+      coupling_graph_hash: sha256:...
+      sim_config_hash: sha256:...
+      code_hash: sha256:...
+      intervention_hash: sha256:...
+      stress_suite_hash: sha256:...
+    stress_pass_rate: 0.95
+    cycles_run: 500
+  provenance_cluster_summary_template:
+    summary_id: PROVCLUST_0001
+    class: ProvenanceClusterSummary
+    step: STEP_5
+    version: 1.2.2
+    co_id: CO_...
+    alpha: 1.0
+    clusters:
+    - cluster_id: CL_DS_001
+      cluster_size: 3
+      w_indep: 0.333
+      member_record_ids:
+      - R_0001
+      - R_0005
+      - R_0011
+  evidence_gap_plan_template:
+    gapplan_id: GAPPLAN_0001
+    class: EvidenceGapPlan
+    step: STEP_5
+    version: 1.2.2
+    co_id: CO_...
+    gaps:
+    - code: provenance_missing_fields
+      fields_missing:
+      - provenance.source_id
+      - provenance.cluster_id
+      notes: Adapter could not derive stable source/cluster ids deterministically.
+    - code: e_sim_contract_incomplete
+      fields_missing:
+      - stress_suite.case_results
+      notes: Simulation ran but did not emit per-case results.
+  artifact_refs_bundle_template:
+    bundle_id: ARTIFACTREFS_0001
+    class: ArtifactRefsBundle
+    step: STEP_5
+    version: 1.2.2
+    co_id: CO_...
+    upstream:
+      scope_ref: U-SCOPE-...
+      terms_ref: U-TERMS-...
+      assumptions_ref: U-ASSUMPTIONS-...
+      falsifiers_ref: U-FALSIFIERS-...
+      opmap_ref: U-OPMAP-...
+    coupling_graph_binding:
+      coupling_graph_version: coupling_graph_v0.1.1
+      coupling_graph_hash: sha256:...
+    downstream:
+      target_step: STEP_6_v1.2
+      evidenceset_ref: EVIDENCESET_0001
+      gapplan_ref: GAPPLAN_0001
+    produced_evidence:
+      e_log_refs: []
+      e_sim_refs:
+      - E_SIM_0001
+      e_ops_refs: []
+      e_case_refs: []
+      e_rep_refs: []
+      e_fail_refs: []
+  precheck_report_template:
+    report_id: PRECHECK_0001
+    class: PrecheckReport
+    step: STEP_5
+    version: 1.2.2
+    co_id: CO_...
+    checks:
+    - name: normalization_completeness
+      pass: true
+      reasons: []
+    - name: provenance_cluster_consolidated
+      pass: true
+      reasons: []
+    final_status: PASS

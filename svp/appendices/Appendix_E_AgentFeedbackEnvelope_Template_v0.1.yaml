@@ -1,0 +1,40 @@
+appendix_e_agent_feedback_envelope_template_v0_1:
+  schema_version: agent_feedback_envelope_v0.1
+  run_id: run_2026_02_14_0001
+  user_profile_ref: profile://user/anon_001
+  policy_ref:
+    policy_pack: SVP-EVAL_PolicyPack_v0.1.1_updated_fixed_step6.yaml
+    sha256: REPLACE_WITH_HASH
+  side_records:
+  - side_record_ref: sr_000001
+    step_id: STEP4
+    status: REJECTED_NOVELTY
+    recommended_protocol: PARTNER_DEV
+    distance_to_pass:
+      kind: numeric
+      metric: novelty
+      threshold: 0.35
+      value: 0.22
+      margin: -0.13
+    reason_codes:
+    - near_duplicate_cluster
+    scores:
+      novelty: 0.22
+      connectedness: 0.18
+  agent_outputs:
+    override_events: []
+    action_plan:
+      selected_protocol: PARTNER_DEV
+      target_side_record_ids:
+      - sr_000001
+      next_actions:
+      - action_id: a1
+        do: Differentiate hypothesis from cluster; add unique constraint
+        expected_artifact: hypothesis_reframe_v1
+      - action_id: a2
+        do: Collect 2 independent sources or measurements
+        expected_artifact: evidence_snippets_v1
+      stop_condition: When novelty >= threshold AND 2 independent evidence refs exist,
+        re-run STEP4 then STEP5.
+      risk_notes:
+      - avoid optimizing only for novelty; keep falsifiability

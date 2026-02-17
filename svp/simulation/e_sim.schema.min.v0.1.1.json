@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "e_sim.schema.min.v0.1.1.json",
+  "title": "E_sim Minimal Schema v0.1.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "sim_run_id",
+    "claim_id",
+    "created_utc",
+    "verdict",
+    "cycles_run",
+    "stress_suite",
+    "stress_pass_rate",
+    "builder_vs_critic_delta",
+    "borrowed_benefit",
+    "borrowed_flag",
+    "gap_codes",
+    "hash_bindings"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "0.1.1"
+    },
+    "sim_run_id": {
+      "type": "string",
+      "minLength": 3
+    },
+    "claim_id": {
+      "type": "string",
+      "minLength": 3
+    },
+    "created_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "STABLE",
+        "UNSTABLE",
+        "INSUFFICIENT"
+      ]
+    },
+    "cycles_run": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "stress_suite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "suite_id",
+        "pass_rate",
+        "cases_total",
+        "cases_pass",
+        "cases_fail",
+        "cases_insufficient"
+      ],
+      "properties": {
+        "suite_id": {
+          "type": "string",
+          "minLength": 3
+        },
+        "pass_rate": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "cases_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cases_pass": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cases_fail": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cases_insufficient": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "coverage_notes": {
+          "type": "string"
+        }
+      }
+    },
+    "stress_pass_rate": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Alias: equals stress_suite.pass_rate"
+    },
+    "builder_vs_critic_delta": {
+      "type": "number",
+      "description": "May be signed; Step 6 uses abs() as ab_delta."
+    },
+    "borrowed_benefit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "is_borrowed",
+        "debt_channels"
+      ],
+      "properties": {
+        "is_borrowed": {
+          "type": "boolean"
+        },
+        "debt_channels": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Elements that carry the cost; may be empty when is_borrowed=false."
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "borrowed_flag": {
+      "type": "boolean",
+      "description": "Alias: equals borrowed_benefit.is_borrowed"
+    },
+    "gap_codes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "EvidenceGap codes (Appendix B). Empty array allowed."
+    },
+    "hash_bindings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy_config_ref",
+        "policy_config_hash",
+        "scenario_profile_id",
+        "scenario_profile_hash",
+        "stress_suite_hash"
+      ],
+      "properties": {
+        "policy_config_ref": {
+          "type": "string",
+          "minLength": 3
+        },
+        "policy_config_hash": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "sha256 of policy YAML if available"
+        },
+        "scenario_profile_id": {
+          "type": "string",
+          "minLength": 3
+        },
+        "scenario_profile_hash": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "sha256 of scenario profile YAML"
+        },
+        "stress_suite_hash": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "sha256 of stress suite YAML"
+        },
+        "opmap_hash": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "sha256 of OPMAP if used"
+        },
+        "u_report_hash": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "sha256 of Protocol U report if used"
+        }
+      }
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

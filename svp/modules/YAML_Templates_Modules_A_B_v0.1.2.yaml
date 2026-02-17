@@ -1,0 +1,161 @@
+modules_a_b_yaml_templates_v0_1_2:
+  meta:
+    status: Normative templates
+    scope:
+    - Module A (ESS) v0.1.2
+    - Module B (RTT) v0.1.2
+    note: Templates include explicit alias fields for E_sim to bridge Step 6 / Protocol
+      S naming.
+  ess_policy_key_paths:
+  - policy.ess.base_strength_table
+  - policy.ess.confidence_thresholds
+  - policy.ess.horizon_T_ref_days
+  - policy.ess.rounding_mode
+  ess_evidence_item_template_v0_1_2:
+    evidence_id: E_0001
+    evidence_class: E_text
+    scope_fit:
+      in_scope: true
+      notes: ''
+    quality: 0.8
+    independence: null
+    independence_triplet:
+      data: 0.8
+      method: 0.8
+      code: 0.8
+    provenance:
+      source_id: SRC_001
+      cluster_id: CL_001
+      cluster_size: 3
+      w_indep: null
+    time_window_days: 30
+    horizon_class: medium
+    validity_passed: true
+    e_sim_fields:
+      builder_vs_critic_delta: 0.005
+      ab_delta: 0.005
+      stress_pass_rate: 0.92
+      stress_suite_pass_rate: 0.92
+      cycles_run: 650
+  ess_output_template_v0_1_2:
+    ess_version: 0.1.2
+    policy_config_ref: SVP-EVAL_PolicyPack_v0.1
+    policy_config_hash: null
+    strength: 75.0
+    confidence: med
+    excluded_reason: null
+    multipliers:
+      Q: 0.85
+      I_triplet: 0.8
+      I_cluster: 0.9
+      I: 0.72
+      T: 0.95
+      S_stab: 0.9
+      S_stress: 0.92
+      S_cycles: 1.0
+    reasons:
+    - OK_SCOPE
+    - OK_VALIDITY
+    - USED_INDEP_TRIPLET
+  rtt_policy_key_paths:
+  - policy.rtt.theta_table
+  - policy.rtt.sim_thresholds.eps
+  - policy.rtt.sim_thresholds.min_stress_pass
+  - policy.rtt.sim_thresholds.min_cycles
+  - policy.rtt.sim_thresholds.cycles_ref
+  - policy.rtt.resampling.enabled
+  - policy.rtt.resampling.bootstrap_runs_min
+  - policy.rtt.resampling.ci_level
+  - policy.rtt.resampling.sign_stability_tau
+  - policy.rtt.resampling.influence_tau
+  - policy.rtt.resampling.influence_topk
+  rtt_input_template_v0_1_2:
+    policy_config_ref: SVP-EVAL_PolicyPack_v0.1
+    policy_config_hash: null
+    rtt_version: 0.1.2
+    horizon_class: medium
+    risk_class: MED
+    claim_flow_affecting: true
+    simulation_required: null
+    E_sim:
+      schema_version: 0.1.1
+      sim_run_id: SIM_0001
+      claim_id: CLM_0001
+      created_utc: YYYY-MM-DDThh:mm:ssZ
+      verdict: STABLE
+      cycles_run: 650
+      stress_suite:
+        suite_id: STRESS_SUITE_DEFAULT_v0.1.1
+        pass_rate: 0.92
+        cases_total: 20
+        cases_pass: 18
+        cases_fail: 1
+        cases_insufficient: 1
+        coverage_notes: ''
+      stress_pass_rate: 0.92
+      builder_vs_critic_delta: 0.005
+      ab_delta: 0.005
+      borrowed_benefit:
+        is_borrowed: false
+        debt_channels: []
+        notes: ''
+      borrowed_flag: false
+      gap_codes: []
+      hash_bindings:
+        policy_config_ref: SVP-EVAL_PolicyPack_v0.1
+        policy_config_hash: null
+        scenario_profile_id: SCS_PROFILE_DEFAULT_v0.1.1
+        scenario_profile_hash: null
+        stress_suite_hash: null
+        opmap_hash: null
+        u_report_hash: null
+      notes: ''
+    stakes_profile_ref: null
+    resampling:
+      enabled: null
+      Ve_samples: []
+      bootstrap_runs_actual: null
+      influence: []
+  rtt_output_template_v0_1_2:
+    policy_config_ref: SVP-EVAL_PolicyPack_v0.1
+    policy_config_hash: null
+    rtt_version: 0.1.2
+    horizon_class: medium
+    risk_class: MED
+    claim_flow_affecting: true
+    simulation_required: true
+    stakes_profile_ref: null
+    theta: 0.65
+    thresholds_used:
+      eps: 0.001
+      min_stress_pass: 0.9
+      min_cycles: 500
+      cycles_ref: 500
+    resampling_thresholds_used:
+      bootstrap_runs_min: 200
+      ci_level: 0.95
+      sign_stability_tau: 0.8
+      influence_tau: 0.25
+      influence_topk: 5
+    observed:
+      ab_delta: 0.005
+      stress_pass_rate: 0.92
+      cycles_run: 650
+      borrowed_benefit: false
+      debt_channels: []
+      time_lag_ok: true
+    resampling_observed:
+      enabled: false
+      bootstrap_runs_actual: 0
+      N_samples: 0
+      ci_level: 0.95
+      ci_low: null
+      ci_high: null
+      sign_mode: 0
+      sign_stability: null
+      influence_max: null
+      influence_topk: []
+    verdict: STABLE
+    reasons:
+    - OK_THRESHOLDS
+    - OK_E_SIM_FIELDS

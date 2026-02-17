@@ -1,0 +1,55 @@
+appendix_d_side_record_template_v0_1:
+  schema_version: side_record_v0.1
+  side_record_id: sr_000001
+  run_id: run_2026_02_14_0001
+  step_id: STEP4
+  timestamp_utc: '2026-02-14T00:00:00Z'
+  input_ref:
+    source_pointer: artifact://intake/fragment/123
+    claim_pointer: artifact://step1/claims/c_045
+    source_id: src_1
+  normalized_claim: Replacing incandescent bulbs with LEDs reduces electricity use
+    for equivalent luminance.
+  status: REJECTED_NOVELTY
+  scores:
+    novelty: 0.22
+    connectedness: 0.18
+    near_dup_simhash: 0.93
+    near_dup_minhash: 0.91
+  reason_codes:
+  - near_duplicate_cluster
+  distance_to_pass:
+    kind: numeric
+    metric: novelty
+    threshold: 0.35
+    value: 0.22
+    margin: -0.13
+  recommended_protocol: PARTNER_DEV
+  agent_override:
+    is_overridden: false
+    override_protocol: null
+    override_reason: null
+  cluster_ref:
+    cluster_id: cl_001
+    cluster_size: 5
+    w_indep: 0.7
+  H_rank: -0.15
+  validity_scope:
+    domain_tags:
+    - energy
+    - lighting
+    context_tags:
+    - household
+    - cost_saving
+  supporting_refs: []
+  counter_refs: []
+  reopen_triggers:
+  - trigger: HUMAN_CHALLENGE
+    condition: Any user objection referencing this side_record_id
+    recommended_protocol: PARTNER_DEV
+  - trigger: NEW_SOURCE_CLUSTER
+    condition: cluster_size increases OR w_indep increases >= +0.1
+    recommended_protocol: EVIDENCE
+  links:
+    appendix_b_gap_codes: Appendix_B_EvidenceGap_Codes_v0.1.1.md
+    appendix_c_adapter_rules: Appendix_C_Adapter_Rules_v0.1.2_fixed.md

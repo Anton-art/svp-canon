@@ -1,0 +1,29 @@
+# SCS Coupling Graph v0.1.2
+# Purpose: pin the connectedness/novelty coupling assumptions used by STEP4→STEP6.
+# Status: normative binding stub (expand as implementation matures).
+
+scs_coupling_graph_v0_1_2:
+  graph_id: SCS-CG-v0.1.2
+  created_utc: "2026-02-14T00:00:00Z"
+  bindings:
+    step4:
+      near_dup:
+        algorithm: "MinHash/LSH + SimHash"
+        minhash_k: 128
+        lsh_bands: 32
+        lsh_rows: 4
+        simhash_bits: 64
+      kgr:
+        enabled: true
+        node_types: ["claim", "source", "concept", "domain_tag"]
+        edge_types: ["supports", "contradicts", "refers_to", "same_cluster"]
+    step5:
+      provenance:
+        adapter_fields: ["source_id", "cluster_id", "cluster_size", "w_indep"]
+        w_indep_formula: "1/(cluster_size^alpha)"
+    step6:
+      policy_binding_required: true
+      fail_closed: true
+  invariants:
+    - "If step4.near_dup.enabled == true, then STEP4 MUST emit cluster refs for NEAR_DUP and REJECTED_NOVELTY."
+    - "If provenance fields missing, downstream MUST mark INSUFFICIENT and emit provenance_missing_fields (or closest Appendix B code)."
