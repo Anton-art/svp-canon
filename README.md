@@ -136,10 +136,12 @@ Core idea: SVP is the **filter**, the personal agent is the **iteration engine**
 **Linux/macOS:**
 ```bash
 sha256sum <file>
+```
 
 **Windows PowerShell:**
-
+```powershell
 Get-FileHash \<file\> \-Algorithm SHA256
+```
 
 ---
 
@@ -181,5 +183,4 @@ Compensators:
 
 * **Status:** engineering specification \+ canonical version/hash registry  
 * **License:** TBD (add on publication)
-
 

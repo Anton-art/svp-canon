@@ -1,7 +1,7 @@
 # SVP-01 Charter v0.1.6 — Syntropy Verdict Protocol (Charter)
 
 **Status:** Charter (Semantics + Prohibitions + Human Role)  
-**Executable spec (current):** SVP-EVAL Policy Pack v0.1 + Steps 1–6 + Modules A,B + Protocols S,U (see §6 Canon Set)  
+**Executable spec (current):** SVP-EVAL Policy Pack v0.1.2 + Steps 1–6 + Modules A,B + Protocols S,U (see §6 Canon Set)  
 **Primary truth gating:** Element-5 (HUM/AI/BIO/TEC/SOC)  
 **Axis-5 role:** secondary; downgrade-only (may narrow scope / downgrade TRUE→UNKNOWN; never upgrade UNKNOWN→TRUE)
 
@@ -103,11 +103,11 @@ If simulation is required but missing/insufficient → `INSUFFICIENT` + gap code
 
 ### 6.0 Pipeline versions (canonical)
 - STEP 1 v1.1.2
-- STEP 2 v1.1.2
-- STEP 3 v1.1.2
-- STEP 4 v1.1.4
-- STEP 5 v1.2.2
-- STEP 6 v1.2.3
+- STEP 2 v1.1.3
+- STEP 3 v1.1.3
+- STEP 4 v1.1.5
+- STEP 5 v1.2.3
+- STEP 6 v1.2.4
 
 - Module A (ESS) v0.1.2
 - Module B (RTT) v0.1.2
@@ -119,14 +119,14 @@ If simulation is required but missing/insufficient → `INSUFFICIENT` + gap code
 |---:|---|---|
 | 1 | `SVP_v0.2.3.md` | `c69e4254bf0300e455d1e77cdb8f5ff92583acd8359377a41b1da11b54091470` |
 | 2 | `SVP-02_v0.2.3.yaml` | `05021778960003dfe4488d28bdfee7055d8359cec0e9566485fef1b0dfbe1e08` |
-| 3 | `SVP-EVAL_PolicyPack_v0.1.1_updated_fixed_step6.md` | `a9defeea95225de75026083fc759e141a8ebcf46c428555630809720df1103f6` |
-| 4 | `SVP-EVAL_PolicyPack_v0.1.1_updated_fixed_step6.yaml` | `8608fcb068dedabc78cb4af2521714cdfcdf606648791385854014969a09b7ae` |
-| 5 | `STEP_1_v1.1.3_Input_Intake_Claim_Extraction_Ultralight_Noise_Gate.md` | `320acb56d5cd5eec9669f273a736c1d2d63375b4c8d2249e668147be0baa3d58` |
-| 6 | `STEP_2_v1.1.2_Stage_A_Ultracheap_Chaos_Score_no_models.md` | `8a5445c6e2137f7e907df48964e90bfeb82dc750bbb008ec9f3290642a3926e2` |
-| 7 | `STEP_3_v1.1.2_ChaosFilter_Stage_B_Main_Chaos_Index.md` | `ea814259be5caa56e9d212505841089a00ad3198d505207351c65673c91b8656` |
-| 8 | `STEP_4_v1.1.5_Novelty_Connectedness_Gate_fixed.md` | `bce1af007014b66a32e9177ab7878fe42cfb7c91001076f0cc2fac0656d77375` |
+| 3 | `SVP-EVAL_PolicyPack_v0.1.2_updated_fixed_step6.md` | `d78ae293abb2bde40ab00dfbf3f76f44d932a02d5f5abf1643e8cde7a20ebc79` |
+| 4 | `SVP-EVAL_PolicyPack_v0.1.2_updated_fixed_step6.yaml` | `0114be34a556d333328445ac792257ece89c84def008733f9aaf12c6bd7f0349` |
+| 5 | `STEP_1_v1.1.2_Input_Intake_Claim_Extraction_Ultralight_Noise_Gate.md` | `aeddb56a9694524b6cc6b5f95ba1368ee5d5fb7b8a54a26772102c5634038573` |
+| 6 | `STEP_2_v1.1.3_Stage_A_Ultracheap_Chaos_Score_no_models.md` | `303676f1412958d84cc1da2408a40758aed3449e74b6f44a3f2aad2efb855e66` |
+| 7 | `STEP_3_v1.1.3_ChaosFilter_Stage_B_Main_Chaos_Index.md` | `d3c8278388e733b6903540e45d87b796d7f324bf17c229c1491e044e5e658769` |
+| 8 | `STEP_4_v1.1.5_Novelty_Connectedness_Gate_fixed.md` | `06839272e2aeb77f49e3a424e3fc455018578c5984ddddd8e419bb51d13f4786` |
 | 9 | `Appendix_A4_STEP4_YAML_Templates_v1.1.4.yaml` | `ed3c2f278b8f97e5f65b76e2996edf56d430d4dcecaa2e6bc23c86dcd4f5ddab` |
-| 10 | `STEP_5_v1.2.2_Proof_Evidence_Builder_fixed.md` | `d1b6617c836bcf6dd827e6767902b658bc289612ebf7a2c4c7366e3264132bbb` |
+| 10 | `STEP_5_v1.2.3_Proof_Evidence_Builder_fixed.md` | `a776a373a258b18e75c5d8179017cd01a330933e5f6c7fcbb84155cdb0d624ad` |
 | 11 | `Appendix_A_STEP5_YAML_Templates_v1.2.2_fixed.yaml` | `742636dabd32a25754bc75ef9cbf3fe31d6bdeb91b92ec92dd56d5f03eb30eb4` |
 | 12 | `Appendix_B_EvidenceGap_Codes_v0.1.1.md` | `fdd2ee727049e20551bb166464cc0e12b23c8876b8d6d6eab27e3569ce5b8d42` |
 | 13 | `Appendix_C_Adapter_Rules_v0.1.2_fixed.md` | `64cb347868ac1a2abd25d91c1cfe21efa736029b0cccfa5636e72638b263baf0` |
@@ -136,9 +136,9 @@ If simulation is required but missing/insufficient → `INSUFFICIENT` + gap code
 | 17 | `Protocol_S_v1.0.2_Simulation_Evidence_Protocol.md` | `bf5c3d7574cad6229584ebe3c34ffb1220f553dfe250516d3a37e2c204396c94` |
 | 18 | `Simulation_Scenario_Spec_v0.1.1.yaml` | `29b23627eff85ce4674b78a9b6ee1e58e9a12952f983aea44e332e7a8b5be776` |
 | 19 | `e_sim.schema.min.v0.1.1.json` | `51a09ef5e72e91146e38fd4d8c93df8985e2b8f93fbe87ad079acea48494767d` |
-| 20 | `SCS_Coupling_Graph_v0.1.2.yaml` | `8b54815017dd4005e930a05d623560f9a94a43c13cab9fc2f2bb0ac67018ca3c` |
+| 20 | `SCS_Coupling_Graph_v0.1.2.yaml` | `cee5e631bfd94123029ac602a6309977deb17f29c752d9cb81bd4acb884e76d8` |
 | 21 | `Protocol_U_v1.0.2_Formalization_Orphan_Consensus.md` | `1ee456b1670b2a200e4d346497914a73d2dd9fd1351eadaea14177ca4b51d205` |
-| 22 | `STEP_6_v1.2.3_SVP-EVAL_fixed.md` | `7436e133f4d0049f3ec4d684dc3ca2ececd9cc284f29ce3adcdcf29dac456b26` |
+| 22 | `STEP_6_v1.2.4_SVP-EVAL_fixed.md` | `931a24aa3aa6dd83cf53335b93026f6f1f0940c5581cb47512f89a720b563315` |
 ### 6.2 Canon boundary
 The following legacy documents are **NOT canonical** until re-issued in MD with explicit version bump and hash:
 - `SVP v0.2.2.docx`
